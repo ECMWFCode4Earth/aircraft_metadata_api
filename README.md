@@ -4,6 +4,8 @@
 
 __Team:__ [@michiboo](https://github.com/michiboo)
 
+__Mentor:__ [@BruceIngleby](https://github.com/BruceIngleby), [@MohamedDahoui](https://github.com/MohamedDahoui)
+
 ### Summary
 The aim of this project is to obtain aircraft metadata for AMDAR data.
 
