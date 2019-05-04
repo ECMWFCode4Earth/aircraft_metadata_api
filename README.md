@@ -12,7 +12,12 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 ### To do
 - [ ] Create API for flightaware
 - [x] Create API for flightradar24
+- [ ] Create API for 1+ more site
 - [x] Create table for airport
-- [] Create table for flight routes
-- [] Finish Readme
-- [] Mapping out flight path? (maybe)
+- [ ] Create table for flight routes
+- [ ] Finish Readme
+- [ ] Mapping out flight path? (maybe)
+- [ ] Optimize 
+- [ ] Documentation
+- [ ] Clean code
+
