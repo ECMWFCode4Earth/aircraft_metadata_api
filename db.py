@@ -1,12 +1,14 @@
 
-from sqlalchemy import create_engine,  Column, DateTime, String, Float
+from sqlalchemy import create_engine, ForeignKey, CheckConstraint, Column, DateTime, Integer, String,Text, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import datetime
+
+
 
 engine = create_engine('sqlite:///database/database.db', echo=True)
 Base = declarative_base(engine)
 session_factory = sessionmaker(bind=engine)
-
 
 class Planetype(Base):
     __tablename__ = "Planetype"
@@ -38,29 +40,35 @@ class Planetype(Base):
 
 class Route(Base):
     __tablename__ = "Route"
-    flightid = Column(String(20), primary_key=True)
-    dep = Column(String(20), nullable=False)
-    arr = Column(String(20), nullable=False)
+    id = Column(Integer, primary_key=True)
+    flightid = Column(String(20))
+    dep = Column(String(5), nullable=False)
+    arr = Column(String(5), nullable=False)
     
     def serialize(self):
         return{
             'flightid': self.flightid,
             'dep': self.dep,
-            'arr': self.dep,
+            'arr': self.arr,
         }
-
 
 class Airport(Base):
     __tablename__ = "Airport"
-    icao = Column(String(20), primary_key=True)
+    iata = Column(String(5), primary_key=True)
+    icao = Column(String(5))
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
+    altitude = Column(Float, nullable=False)
     
     def serialize(self):
         return{
             'icao': self.icao,
             'latitude': self.latitude,
             'longitude': self.longitude,
+            'altitude': self.altitude,
         }
-# Base.metadata.drop_all()
-# Base.metadata.create_all()
+
+
+def reinit():
+    Base.metadata.drop_all()
+    Base.metadata.create_all()
