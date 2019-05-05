@@ -20,4 +20,5 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 - [ ] Optimize 
 - [ ] Documentation
 - [ ] Clean code
+- [ ] Use official API of flightaware?
 
