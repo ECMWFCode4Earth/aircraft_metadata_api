@@ -23,4 +23,4 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 - [ ] Use official API of flightaware?
 
 ### Acknowledgments
-Thank you [@jwagemann] for organize ESOWC event!
+Thank you [@jwagemann](https://github.com/jwagemann) for organize ESOWC event!
