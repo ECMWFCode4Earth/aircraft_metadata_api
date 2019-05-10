@@ -1,3 +1,8 @@
+Master:
+[![Build Status](https://travis-ci.org/esowc/aircraft_metadata_api.svg?branch=master)](https://travis-ci.org/esowc/aircraft_metadata_api/)
+Develop branch:
+[![Build Status](https://travis-ci.org/esowc/aircraft_metadata_api.svg?branch=develop)](https://travis-ci.org/esowc/aircraft_metadata_api/)
+
 # aircraft_metadata_api
 
 # ESoWC 2019 - Obtaining online aircraft metadata. 
