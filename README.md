@@ -34,6 +34,15 @@ To use the script in other directory, run the command below:
 ```
 export PYTHONPATH=${PYTHONPATH}:[script_path]
 ```
+To retrieve routes and plane type:
+```
+from planeTypeAPI import api
+a = api()
+flightID =  a._getTypeByID('CX19',option=1) # option 1 - flightaware , 0 - flightradar24
+routes = a.getRoutebyAware('PDX','SEA') # get routes from flightaware
+routestat = a.getRouteByStat('PDX','SEA', 20190510192005) # get routes from flightstats
+
+```
 
 ### Acknowledgments
 Thank you [@jwagemann](https://github.com/jwagemann) for organize ESOWC event!
