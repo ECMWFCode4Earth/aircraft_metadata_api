@@ -32,7 +32,7 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 
 To use the script in other directory, run the command below:
 ```
-export PYTHONPATH=${PYTHONPATH}:[script_path]
+export PYTHONPATH=${PYTHONPATH}:${pwd}
 ```
 To retrieve routes and plane type:
 ```
