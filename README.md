@@ -31,7 +31,9 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 ### quick start
 
 To use the script in other directory, run the command below:
+```
 export PYTHONPATH=${PYTHONPATH}:[script_path]
+```
 
 ### Acknowledgments
 Thank you [@jwagemann](https://github.com/jwagemann) for organize ESOWC event!
