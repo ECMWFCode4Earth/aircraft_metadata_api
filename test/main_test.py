@@ -2,6 +2,7 @@ import sys
 import os
 import subprocess
 from planeTypeAPI import api
+from db import session_factory
 chrome_path = os.path.abspath(os.path.join(os.getcwd(), '.'))+ "/chromedriver/chromedriver"  
 
 
@@ -18,5 +19,13 @@ def test_getTypeByID():
     a = api(chrome_path =chrome_path)
     planeType = a._getTypeByID('CX712',option=1)
     assert planeType == 'A333' or planeType == 'A359'
+
+
+def test_db():
+    session = session_factory()
+    cur = session.execute("select icao, latitude, longitude, iata from Airport where iata = 'GKA'")
+    cur = cur.fetchone()
+    assert cur[0] == 'AYGA'
+
 
 

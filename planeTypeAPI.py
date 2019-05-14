@@ -219,6 +219,3 @@ class planetypedb():
                     totaline += 1
                     if testline%10 == 0:
                         print('total record: %d, record tested: %d , record matched: %d'%(totaline,testline,matchline))
-
-
-
