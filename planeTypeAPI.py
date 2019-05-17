@@ -47,6 +47,23 @@ def toepoch(_date):   # input format 20190501173500
     return (datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(seconds)) - datetime.datetime(1970, 1, 1)).total_seconds()
 
 
+class flightawareAPI():
+    
+    def __init__(self,username,apiKey):
+        self.username = username
+        self.apiKey = apiKey
+        self.fxmlUrl = "https://flightxml.flightaware.com/json/FlightXML2/DecodeFlightRoute"
+
+    def enroute(self,flight):
+        payload = {'airport':'KSFO', 'howMany':'10'}
+        response = requests.get(self.fxmlUrl + "Enroute",
+        params=payload, auth=(self.username, self.apiKey))
+
+        if response.status_code == 200:
+            print(response.json())
+        else:
+            print("Error executing request")
+
 class api():
     def __init__(self, chrome_path=os.getcwd() +"/chromedriver/chromedriver"):
         chrome_options = Options()
@@ -97,9 +114,9 @@ class api():
                     return None  
         return None
 
-    def get_airport(self, lat1, long1):
+    def get_airport(self, lat1, long1, range=5):
         session = session_factory()
-        arange = [ int(long1-30), int(long1+30), int(lat1 - 30) , int(lat1+30) ]
+        arange = [ int(long1-range), int(long1+range), int(lat1 - range) , int(lat1+range) ]
         cur = session.execute("select icao, latitude, longitude from Airport where longitude  between %d and %d and latitude between %d and %d"% (arange[0],arange[1],arange[2],arange[3]))
         mini = 9999999999999999
         res = None
@@ -125,7 +142,7 @@ class api():
                 routes.add(flightID)
         return list(routes)
 
-    def getRouteByStat(self,dep,arr,_date): # for hour 0 - 0-6, 6 - 6-12, 12 -12-18, 18 - 0 
+    def getRoutebyStat(self,dep,arr,_date): # for hour 0 - 0-6, 6 - 6-12, 12 -12-18, 18 - 0 
         if type(_date) != str:
             _date = str(_date)
         year = int(_date[:4])
@@ -177,14 +194,25 @@ class routedb():
 
 class airportdb():
     def loaddata(self):
+        count = 0
         session = session_factory()
         with open('./rawdata/airports.txt') as fp:
             for line in fp:
                 tmp = line.split(',')
                 if tmp[4] != "\\N":
-                    session.execute("insert into Airport (icao, latitude,longitude)\
-                    VALUES( '%s' , %f , %f )"% (tmp[4].replace('"', ''),
-                                float(tmp[6]), float(tmp[7])))
+                    session.execute("insert into Airport ( iata, icao, latitude,longitude, altitude)\
+                                    VALUES( '%s' , '%s', %f , %f, %f)"
+                                    %(tmp[4].replace('"', ''),tmp[5].replace('"', ''),
+                                    float(tmp[6]),float(tmp[7]),float(tmp[8]))) 
+                    count += 1
+        try:
+            session.commit()
+            print('successfully inserted %d row'% count)
+        except:
+            print('error')
+            session.rollback()
+            session.flush()
+
 
 class planetypedb():
     def loaddata(self):
@@ -219,6 +247,30 @@ class planetypedb():
                     totaline += 1
                     if testline%10 == 0:
                         print('total record: %d, record tested: %d , record matched: %d'%(totaline,testline,matchline))
-
-
-
+    
+    def loadAREP(self):
+        a = api() 
+        totaline = 0
+        matched = 0
+        flightIDs = set()
+        for file in os.listdir('./rawdata/arep'):
+            start = time.time()
+            with open('./rawdata/arep/'+file) as fp:
+                f = open("test_arep1.txt", "a")
+                f.write("\n for file %s \n"%file)
+                for line in fp:
+                    tmp = line.split()
+                    totaline += 1
+                    if tmp[0][:3].isalpha():
+                        flightIDs.add(tmp[0]) 
+        for i in list(flightIDs):
+            ptype = a._getTypeByID(i,option=1)
+            if ptype:
+                matched += 1
+                f.write("%s  matched with type %s \n"%(i, ptype))
+            else:
+                print('nothing!')
+        end = time.time()
+        f.write('total tested: %d, record matched: %d,time taken: %f'
+                    %(totaline,matched ,end-start))
+        f.close()
