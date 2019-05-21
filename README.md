@@ -30,6 +30,9 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 
 ### quick start
 
+It have to use a specific version of chrome, in this case it use version 74, if your chrome version is differnt.
+Visit http://chromedriver.chromium.org/downloads to download corresponding chromedriver and put it in chromedriver folder.
+
 To use the script in other directory, run the command below:
 ```
 export PYTHONPATH=${PYTHONPATH}:${pwd}
