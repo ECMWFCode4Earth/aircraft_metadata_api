@@ -13,8 +13,9 @@ before_install:
   - export PYTHONPATH=${PYTHONPATH}:${PWD}
 install:
   - pip install -r requirements.txt
-script:
-  pytest
   - docker build -t api .
   - docker run --it api
+script:
+  pytest
+
 
