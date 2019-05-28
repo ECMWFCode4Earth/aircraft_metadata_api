@@ -3,6 +3,7 @@ import os
 import subprocess
 from planeTypeAPI import api
 from db import session_factory
+from datetime import datetime
 chrome_path = os.path.abspath(os.path.join(os.getcwd(), '.'))+ "/chromedriver/chromedriver"  
 
 
@@ -11,8 +12,8 @@ def test_getRouteAware():
     # g_version = str(subprocess.check_output(['google-chrome', '--version']))
     # assert g_version[2:len(g_version)-3] == "Google Chrome 74.0.3729.6 dev"
     a = api(chrome_path =chrome_path)
-    routes = a.getRoutebyAware('SEA','PDX')
-    assert len(routes) > 5
+    routes = a.getRoutebyAware('LHR','JFK')
+    assert 'BAW173' in routes
     sys.stdout.write(routes[0])
 
 def test_getTypeByID():
@@ -20,12 +21,19 @@ def test_getTypeByID():
     planeType = a._getTypeByID('CX712',option=1)
     assert planeType == 'A333' or planeType == 'A359'
 
+def test_getRoutebyStat():
+    a = api(chrome_path =chrome_path)
+    today = datetime.today().strftime('%Y%m%d')
+    today += '18'
+    route = a.getRoutebyStat('LHR','JFK',today)
+    assert 'BA 1593' in route
 
 def test_db():
     session = session_factory()
     cur = session.execute("select icao, latitude, longitude, iata from Airport where iata = 'GKA'")
     cur = cur.fetchone()
     assert cur[0] == 'AYGA'
+
 
 
 

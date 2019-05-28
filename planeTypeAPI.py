@@ -81,7 +81,7 @@ class api():
 
     def _getTypeByID(self, flightID, _time=None, option=0):
        # first try flightradar24
-        s = random.uniform(1.0,3.0)
+        s = random.uniform(1.0,2.0)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
         if option == 0:
@@ -128,12 +128,12 @@ class api():
                 res = row[0]
         return res
     
-    def getRoutebyPort(self,arr,dep):
+    def getRoutebyPort(self,dep,arr):
         session = session_factory()
         res = session.execute("select flightid from route where arr='%s' and dep = '%s'"% (arr,dep))
         return [i[0] for i in res]
 
-    def getRoutebyAware(self,arr,dep):  #ICAO
+    def getRoutebyAware(self,dep,arr):  #ICAO
         self.driver.get("https://flightaware.com/live/findflight?origin=%s&destination=%s" % (dep,arr))
         datarow = self.driver.find_elements_by_css_selector('td[class="ffinder-results-ident text_align_left"]')
         routes = set()

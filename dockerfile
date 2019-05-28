@@ -23,5 +23,5 @@ ADD . .
 ENV PYTHONPATH="$PYTHONPATH:${PWD}"
 RUN pip3 install -r requirements.txt
 RUN pip3 install pytest
-# RUN pytest
+RUN pytest
 
