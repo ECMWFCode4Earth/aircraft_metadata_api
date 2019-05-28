@@ -15,9 +15,10 @@ before_install:
 install:
   - pytest
   - docker build -t api .
-  - docker run --privileged -it api
+  - docker run --name api_test1 -d -it api
 script:
   - pytest
-  - docker ps | grep -i myapp
+  - docker ps | grep -i api_test
+  - docker exec api_test1 pytest
 
 
