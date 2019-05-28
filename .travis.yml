@@ -14,7 +14,7 @@ before_install:
 install:
   - pip install -r requirements.txt
   - docker build -t api .
-  - docker run --privileged --it api
+  - docker run --privileged -it api
   - pytest
   - exit
 script:
