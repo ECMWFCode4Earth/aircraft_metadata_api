@@ -11,13 +11,13 @@ before_install:
   - sudo dpkg -i ./google-chrome-unstable_74.0.3729.6-1_amd64.deb 
   - sudo apt-get install -f 
   - export PYTHONPATH=${PYTHONPATH}:${PWD}
-install:
   - pip install -r requirements.txt
+install:
+  - pytest
   - docker build -t api .
   - docker run --privileged -it api
-  - pytest
-  - exit
 script:
-  pytest
+  - pytest
+  - docker ps | grep -i myapp
 
 
