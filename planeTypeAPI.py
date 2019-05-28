@@ -73,6 +73,7 @@ class api():
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
+        chrome_options.add_argument("--no-sandbox")
         self.driver = webdriver.Chrome(options=chrome_options, executable_path=self.chrome_driver)
         self.wait = WebDriverWait(self.driver, 10)
         self.rotate = random.randint(4,10)
