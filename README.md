@@ -38,8 +38,12 @@ To use the script in other directory, run the command below:
 export PYTHONPATH=${PYTHONPATH}:${pwd}
 ```
 To add it permanently to python path:
-run 
-` echo 'export PYTHONPATH=$PYTHONPATH:'$PWD >>  ~/.bashrc`
+
+run:
+``` 
+echo 'export PYTHONPATH=$PYTHONPATH:'$PWD >>  ~/.bashrc
+source ~/.bashrc
+ ```
 
 To retrieve routes and plane type:
 ```
