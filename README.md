@@ -39,7 +39,7 @@ export PYTHONPATH=${PYTHONPATH}:${pwd}
 ```
 To add it permanently to python path:
 run 
-` echo 'export PYTHONPATH=$PYTHONPATH:{PWD}' >>  ~/.bashrc`
+` echo 'export PYTHONPATH=$PYTHONPATH:${PWD}' >>  ~/.bashrc`
 
 To retrieve routes and plane type:
 ```
