@@ -38,9 +38,8 @@ To use the script in other directory, run the command below:
 export PYTHONPATH=${PYTHONPATH}:${pwd}
 ```
 To add it permanently to python path:
-open file ~/.bashrc 
-add the line below:
-```export PYTHONPATH=/home/my_user/code```
+run 
+` echo 'export PYTHONPATH={PWD} >>  ~/.bashrc`
 
 To retrieve routes and plane type:
 ```
@@ -49,6 +48,14 @@ a = api()
 flightID =  a._getTypeByID('CX19',option=1) # option 1 - flightaware , 0 - flightradar24
 routes = a.getRoutebyAware('PDX','SEA') # get routes from flightaware
 routestat = a.getRouteByStat('PDX','SEA', 20190510192005) # get routes from flightstats
+
+```
+
+### more quicker start with docker
+In the directory run 
+```
+sudo docker build -t [tag name] .
+sudo docker run -it [tag name]
 
 ```
 
