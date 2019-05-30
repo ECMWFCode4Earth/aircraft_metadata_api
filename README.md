@@ -27,6 +27,9 @@ The aim of this project is to obtain aircraft metadata for AMDAR data.
 - [ ] Clean code
 - [ ] Use official API of flightaware?
 
+### manual installation
+
+To install the api manually please follow the steps in .travis.yml
 
 ### quick start
 
