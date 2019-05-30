@@ -2,6 +2,8 @@ language: python
 python:
   - "2.7"
   - "3.6"
+services:
+  - docker
 before_install:
   - sudo apt-get remove google-chrome-stable
   - wget https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-unstable/google-chrome-unstable_74.0.3729.6-1_amd64.deb
@@ -9,8 +11,14 @@ before_install:
   - sudo dpkg -i ./google-chrome-unstable_74.0.3729.6-1_amd64.deb 
   - sudo apt-get install -f 
   - export PYTHONPATH=${PYTHONPATH}:${PWD}
-install:
   - pip install -r requirements.txt
-
+install:
+  - docker build -t api .
+  - pytest
+  - docker run --name api_test1 -d -it api
 script:
-  pytest
+  - pytest
+  - docker ps | grep -i api_test
+  - docker exec api_test1 pytest
+
+

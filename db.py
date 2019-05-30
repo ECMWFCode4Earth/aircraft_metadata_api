@@ -13,28 +13,26 @@ session_factory = sessionmaker(bind=engine)
 class Planetype(Base):
     __tablename__ = "Planetype"
     amdarid = Column(String, primary_key=True)
-    planetype = Column(String(20))
-    deptime = Column(DateTime)
-    arrtime = Column(DateTime)
-    dep = Column(String(4))
-    arr = Column(String(4))
-    deplat = Column(Float)
-    deplong = Column(Float)
-    arrlat = Column(Float)
-    arrlong = Column(Float)
+    flightid = Column(String)
+    planetype = Column(String)
+    deptime = Column(Integer)
+    arrtime = Column(Integer)
+    dep = Column(String)
+    depcount = Column(Integer,default=0)
+    arr = Column(String)
+    arrcount = Column(Integer, default=0)
 
     def serialize(self):
         return {
             'amdarid': self.amdarid,
+            'fligthid': self.flightid,
             'planetype': self.planetype,
             'deptime': self.deptime,
             'arrtime': self.arrtime,
-            'dep': self.dep,
-            'arr': self.arr,
-            'deplat': self.deplat,
-            'deplong': self.deplong,
-            'arrlat': self.arrlat,
-            'arrlong': self.arrlong
+            'dep' : self.dep,
+            'depcount': self.depcount,
+            'arr' : self.arr,
+            'arrcount' : self.arrcount,
         }
 
 
