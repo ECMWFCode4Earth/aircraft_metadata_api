@@ -1,7 +1,7 @@
 import os
 import random
 import math
-import datetime
+from datetime import datetime
 import time
 import db
 from selenium import webdriver
@@ -9,8 +9,6 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from db import session_factory
 import requests
-from lxml.html import fromstring
-from itertools import cycle
 
 dirpath = os.getcwd()
 
@@ -24,6 +22,28 @@ def reinit():
     a = planetypedb()
     a.loaddata()
 
+def convertTimeZone(datestr,_time,timezone):
+    datestr = [i for i in datestr.split('-')]
+    _time = _time.split(':')
+    if timezone[0] != '+' and timezone[0] != '-':
+        # To do get UTC diff from db
+        pass
+    else:
+        # add or substract hours to UTC 
+        if timezone[0] == '+':
+            _time[0] = int(_time[0]) + int(timezone[1:])
+        elif timezone[0] == '-':
+            _time[0] = int(_time[0]) - int(timezone[1:])
+        tmptime = str(_time[0])+ ':' +_time[1]
+        local_tz = datetime.strptime(tmptime, "%I:%M%p") 
+        local_tz = datetime.strftime(local_tz, "%H:%M")
+    month = time.strptime(datestr[1],'%b').tm_mon
+    if len(str(month)) == 1:
+        month = '0'+ str(month)
+    date = datestr[2] + month + datestr[0]   + local_tz.replace(':','') 
+    if len(date) == 12:
+        date += '00'
+    return date
 
 def diffdistance(long1, lat1, long2, lat2):
     lat1 = math.radians(lat1)
