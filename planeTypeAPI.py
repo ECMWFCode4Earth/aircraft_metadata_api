@@ -84,7 +84,7 @@ class flightawareAPI():
         else:
             print("Error executing request")
 
-class api():
+class PlaneTypeapi():
     def __init__(self, chrome_path=os.getcwd() +"/chromedriver/chromedriver"):
         chrome_options = Options()
         self.chrome_driver = chrome_path
@@ -104,8 +104,9 @@ class api():
         s = random.uniform(1.0,2.0)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
+        epochtime = toepoch(_time)
+
         if option == 0:
-            epochtime = toepoch(_time)
             self.driver.get("https://www.flightradar24.com/data/flights/"+flightID)
             try:
                 self.wait.until(lambda driver: self.driver.find_element_by_css_selector('tr[class=" data-row"]').is_displayed())
@@ -130,7 +131,15 @@ class api():
             for row in table:
                 try:
                     data = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')
-                    return data[0].text
+                    date = date[0].text.split('\n')[1]
+                    deptime = tmptime[0].text.split('\n')[0]
+                    arrtime = tmptime[1].text.split('\n')[0]
+                    deptz = deptime.split()[1]
+                    arrtz = arrtime.split()[1]
+                    deptime = convertTimeZone(date,deptime.split()[0],deptz) 
+                    arrtime = convertTimeZone(date,arrtime.split()[0],arrtz)
+                    if epochtime >= toepoch(dpetime) and epochtime <= toepoch(arrtime):
+                        return data[0].text
                 except:
                     return None  
         return None
@@ -236,41 +245,134 @@ class airportdb():
 
 
 class planetypedb():
+
+    def __init__(self):
+        self.session = session_factory()
+        self.api = PlaneTypeapi()
+
     def loaddata(self):
-        a = api()
-        #res = []
+        filelist = os.listdir('./rawdata/data')
+        filelist.sort(key=lambda x: int(x.split('.')[1]))
+        totalunique = 0
+        totaline = 0
+        matched = 0
+        dict1 = {}
+        timedict = {}
         totaline = 0
         testline = 0
         matchline = 0
-        for file in os.listdir('./rawdata/amdw'):
-            with open('./rawdata/amdw/'+file) as fp:
+        flightIDs = set()
+        for file in filelist:
+            with open('./rawdata/data/'+file) as fp:
                 for line in fp:
                     tmp = line.split()
-                    if tmp[7] != '???' and tmp[8] != '???':
-                        testline += 1
-                        id = a.getRoutebyPort(tmp[7],tmp[8])
-                        tmp1 = None
-                        if len(id) != 0:
-                            for x in id:
-                                print("testing on flightID %s"%x)
-                                tmp1 = a._getTypeByID(x,tmp[1]+tmp[2])
-                                if tmp1 != None:
-                                    id = x
-                                    print('match successful %s with %s' %(x,tmp1))
-                                    break
-                            if tmp1 != None:
-                                matchline += 1
-                                f = open("text.txt", "a")
-                                f.write("%s, %s, %s, %s, %s \n"%(tmp[0], id, tmp1, tmp[7], tmp[8]))
-                                f.close()
-                    else:
-                        print('no matching route')
-                    totaline += 1
-                    if testline%10 == 0:
-                        print('total record: %d, record tested: %d , record matched: %d'%(totaline,testline,matchline))
+                    if file[:4] == 'AREP':
+                        if tmp[0][:3].isalpha():
+                            flightIDs.add(tmp[0]) 
+                        ## TO do AREP
+
+                        ## for AMDAR
+                        else:
+                            if float(tmp[5]) < 3000.0:
+                                # add AMDAR ID to temp dict 
+                                if tmp[0] not in dict1:
+                                        dict1[tmp[0]] = {}
+                                # add time to time dict for amdar
+                                if tmp[0] not in timedict:
+                                    timedict[tmp[0]] = [tmp[1]+tmp[2]]
+                                else:
+                                    # select a random time
+                                    timedict[tmp[0]].append(tmp[1]+tmp[2])
+                                    timedict[tmp[0]].pop(random.randrange(len(timedict[tmp[0]])))
+                                
+                                if tmp[7] != '???' and tmp[8] != '???':
+                                    if tmp[7] not in dict1[tmp[0]]:
+                                            dict1[tmp[0]][tmp[7]] = 1
+                                    else:
+                                        dict1[tmp[0]][tmp[7]] += 1
+                                    if tmp[8] not in dict1[tmp[0]]:
+                                            dict1[tmp[0]][tmp[8]] = 1
+                                    else:
+                                        dict1[tmp[0]][tmp[8]] += 1
+                                else:
+                                    match = self.api.get_airport(float(tmp[3]),float(tmp[4]))
+                                    if match != None:
+                                        matched += 1
+                                        if match not in dict1[tmp[0]]:
+                                            dict1[tmp[0]][match] = 1
+                                        else:
+                                            dict1[tmp[0]][match] += 1
+
+        matchedRoute = 0
+        matchedType = 0
+        for i in dict1:
+            indb = self.session.execute("select * from planetype where amdarid = '%s'" %i).fetchone()
+            val = list(dict1[i].keys())
+            val.sort(key=lambda x: dict1[i][x],reverse=True)
+            if len(val) < 2:
+                print('less than 2 airport')
+                continue
+            if not indb:
+                #try:
+                totalunique += 1
+                b = self.get_route(val[0],val[1],timedict[i][0])
+                if b:
+                    print(b)
+                    matchedRoute += 1
+                for x in b:
+                    print('testing for %s'%x)
+                    planetype = self.api._getTypeByID(x,timedict[i][0],option=1)
+                    if planetype:
+                        matchedType+= 1
+                        self.session.execute("insert into Planetype ( amdarid, flightid,planetype, dep,arr,depcount,  arrcount) VALUES( '%s' , '%s' , '%s', '%s' , '%s', %d, %d)"
+                                %(i,x,planetype,val[1],val[0], dict1[i][val[1]],dict1[i][val[1]])) 
+                        countdb = self.session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
+                        if countdb:
+                            if planetype in [countdb[2],countdb[5],countdb[8]]:
+                                dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
+                                self.session.execute("UPDATE Planetypematch SET matchcount%s = matchcount%s + 1 where amdarid = '%s'" %(dbc,dbc,i))
+                            elif "" in [countdb[2],countdb[5],countdb[8]]:
+                                dbc = [countdb[2],countdb[5],countdb[8]].index('') + 1
+                                self.session.execute("insert into Planetypematch ( amdarid, flightid{dbc},planetype{dbc}, matchcount{dbc}) VALUES( '%s' , '%s', '%s', %d)"
+                                %(i,x,planetype,1))                     
+                        else:
+                            self.session.execute("insert into Planetypematch ( amdarid, flightid1,planetype1, matchcount1) VALUES( '%s' , '%s', '%s', %d)"
+                                %(i,x,planetype,1))   
+                        if matchedType%2 == 0:
+                            self.session.commit()
+                        print('\n planetype %s matched for %s and %s'%(planetype,x,i))
+                        break
+                #except:
+                #    continue
+            elif dict1[i][val[1]] > indb[6] and dict1[i][val[1]] > indb[8]:
+                session = session_factory()
+                b = self.api.getRoutebyPort(val[0],val[1])
+                b1 = self.api.getRoutebyPort(val[1],val[0])
+                if b or b1:
+                    matchedRoute += 1
+                    b += b1
+                    for x in b:
+                        print('testing for %s'%x)
+                        planetype = self.api._getTypeByID(x,_time =timedict[i][0] ,option=1)
+                        if planetype:
+                            matchedType+= 1
+                            self.session.execute("UPDATE Planetype SET flightid = '%s', planetype = '%s', dep = '%s', arr = '%s', depcount = %d, arrcount = %d WHERE amdarid = '%s'"
+                                            %(x,planetype,val[1],val[0],dict1[i][val[1]],dict1[i][val[0]],i))
+                            countdb = session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
+                            if countdb:
+                                if planetype in [countdb[2],countdb[5],countdb[8]]:
+                                    dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
+                                    self.session.execute("UPDATE Planetypematch SET matchcount%s = matchcount%s + 1 where amdarid = '%s'" %(dbc,dbc,i))
+                                elif "" in [countdb[2],countdb[5],countdb[8]]:
+                                    dbc = [countdb[2],countdb[5],countdb[8]].index('') + 1
+                                    self.session.execute("insert into Planetypematch ( amdarid, flightid{dbc},planetype{dbc}, matchcount{dbc}) VALUES( '%s' , '%s', '%s', %d)"
+                                        %(i,x,planetype,1))  
+                            if matchedType%5 == 0:
+                                self.session.commit()
+                            print('\n update planetype %s matched for %s and %s'%(planetype,x,i))
+                            break
     
     def loadAREP(self):
-        a = api() 
         totaline = 0
         matched = 0
         flightIDs = set()
@@ -285,7 +387,7 @@ class planetypedb():
                     if tmp[0][:3].isalpha():
                         flightIDs.add(tmp[0]) 
         for i in list(flightIDs):
-            ptype = a._getTypeByID(i,option=1)
+            ptype = self.api._getTypeByID(i,option=1)
             if ptype:
                 matched += 1
                 f.write("%s  matched with type %s \n"%(i, ptype))
@@ -295,3 +397,17 @@ class planetypedb():
         f.write('total tested: %d, record matched: %d,time taken: %f'
                     %(totaline,matched ,end-start))
         f.close()
+
+    def get_route(self,dep,arr,_date):   
+        b = self.api.getRoutebyPort(dep,arr)
+        if not b:
+            b = self.api.getRoutebyStat(dep,arr,_date) + self.api.getRoutebyAware(dep,arr)
+        if not b:
+            return []
+        for x in b:
+            indb = self.session.execute("select * from Route where flightid = '%s'" %x).fetchone()
+            if not indb:
+                self.session.execute("insert into Route ( flightid, dep,arr) VALUES( '%s' , '%s' , '%s')"
+                                %(x,dep,arr)) 
+                self.session.commit()
+        return b
