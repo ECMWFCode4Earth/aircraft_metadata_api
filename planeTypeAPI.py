@@ -84,7 +84,7 @@ class flightawareAPI():
         else:
             print("Error executing request")
 
-class PlaneTypeapi():
+class api():
     def __init__(self, chrome_path=os.getcwd() +"/chromedriver/chromedriver"):
         chrome_options = Options()
         self.chrome_driver = chrome_path
@@ -248,7 +248,7 @@ class planetypedb():
 
     def __init__(self):
         self.session = session_factory()
-        self.api = PlaneTypeapi()
+        self.api = api()
 
     def loaddata(self):
         filelist = os.listdir('./rawdata/data')
