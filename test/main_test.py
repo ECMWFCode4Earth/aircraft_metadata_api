@@ -1,9 +1,10 @@
 import sys
 import os
 import subprocess
-from planeTypeAPI import api
+from planeTypeAPI import api,convertTimeZone
 from db import session_factory
 from datetime import datetime
+import time
 chrome_path = os.path.abspath(os.path.join(os.getcwd(), '.'))+ "/chromedriver/chromedriver"  
 a = api(chrome_path =chrome_path)
 
@@ -30,6 +31,9 @@ def test_db():
     cur = session.execute("select icao, latitude, longitude, iata from Airport where iata = 'GKA'")
     cur = cur.fetchone()
     assert cur[0] == 'AYGA'
+
+def test_converttz():
+    assert convertTimeZone('10-Jun-2019','04:10PM','+07') == '20190610231000'
 
 
 

@@ -99,13 +99,11 @@ class api():
         self.rotate = random.randint(4,10)
 
 
-    def _getTypeByID(self, flightID, _time=None, option=0):
+    def _getTypeByID(self, flightID, epochtime=None, option=0):
        # first try flightradar24
         s = random.uniform(1.0,2.0)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
-        epochtime = toepoch(_time)
-
         if option == 0:
             self.driver.get("https://www.flightradar24.com/data/flights/"+flightID)
             try:
@@ -131,15 +129,17 @@ class api():
             for row in table:
                 try:
                     data = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')
-                    date = date[0].text.split('\n')[1]
-                    deptime = tmptime[0].text.split('\n')[0]
-                    arrtime = tmptime[1].text.split('\n')[0]
-                    deptz = deptime.split()[1]
-                    arrtz = arrtime.split()[1]
-                    deptime = convertTimeZone(date,deptime.split()[0],deptz) 
-                    arrtime = convertTimeZone(date,arrtime.split()[0],arrtz)
-                    if epochtime >= toepoch(dpetime) and epochtime <= toepoch(arrtime):
-                        return data[0].text
+                    if epochtime:
+                        date = date[0].text.split('\n')[1]
+                        deptime = tmptime[0].text.split('\n')[0]
+                        arrtime = tmptime[1].text.split('\n')[0]
+                        deptz = deptime.split()[1]
+                        arrtz = arrtime.split()[1]
+                        deptime = convertTimeZone(date,deptime.split()[0],deptz) 
+                        arrtime = convertTimeZone(date,arrtime.split()[0],arrtz)
+                        if epochtime >= toepoch(dpetime) and epochtime <= toepoch(arrtime):
+                            return data[0].text
+                    return data[0].text
                 except:
                     return None  
         return None
