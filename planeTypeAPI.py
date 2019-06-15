@@ -147,10 +147,16 @@ class api():
                 return None
             
             datas = []
-            first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
-            ptype = first.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
-            date = first.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
-            datas.append([ptype,date])
+            t  = 0
+            while t < 3:
+                try:
+                    first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
+                    ptype = first.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                    date = first.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                    datas.append([ptype,date])
+                    break
+                except:
+                    t+= 1
             for x in table:
                 t  = 0
                 while t < 3:
