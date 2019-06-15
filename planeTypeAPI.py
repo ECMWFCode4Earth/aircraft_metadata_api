@@ -160,6 +160,7 @@ class api():
                 except:
                     t+= 1
             for x in table:
+                rows = None
                 t  = 0
                 while t < 3:
                     try:
@@ -199,6 +200,7 @@ class api():
             
             for x in table:
                 t  = 0
+                rows = None
                 while t < 3:
                     try:
                         rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')     
