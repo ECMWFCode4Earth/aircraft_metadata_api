@@ -149,7 +149,13 @@ class api():
             date = first.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
             datas.append([ptype,date])
             for x in table:
-                rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                t  = 0
+                    while t < 3:
+                        try:
+                            rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                            break
+                        except:
+                            t += 1
                 for row in rows:
                     # plane type
                     t  = 0
