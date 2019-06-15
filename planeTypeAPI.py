@@ -159,18 +159,19 @@ class api():
                     break
                 except:
                     t+= 1
-            for x in table:
+            for x in range(len(table)):
                 rows = None
                 t  = 0
                 while t < 3:
                     try:
-                        rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                        rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                         break
                     except:
                         t += 1
                 if not rows:
-                    self.driver.refresh()
-                    rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                    table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                    table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                    rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 
                 for row in rows:
                     # plane type
@@ -195,19 +196,22 @@ class api():
                     datas[0].append(tmptime[1].text)
                     break
                 except:
-                    self.driver.refresh()
                     t += 1
             
-            for x in table:
-                t  = 0
+            for x in range(len(table)):
                 rows = None
+                t  = 0
                 while t < 3:
                     try:
-                        rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')     
+                        rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                         break
                     except:
-                        self.driver.refresh()
                         t += 1
+                if not rows:
+                    table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                    table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                    rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+
                 for i in range(len(rows)):
                     t = 0
                     while t < 3:
@@ -217,7 +221,6 @@ class api():
                             datas[i].append(tmptime[1].text)
                             break
                         except:
-                            self.driver.refresh()
                             t += 1
             print(len(datas))
             print(datas)
