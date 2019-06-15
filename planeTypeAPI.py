@@ -152,9 +152,16 @@ class api():
                 rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 for row in rows:
                     # plane type
-                    ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
-                    date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
-                    datas.append([ptype,date])
+                    try:
+                        ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                        date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                        datas.append([ptype,date])
+                    except:
+                        self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+                        ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                        date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                        datas.append([ptype,date])
+
             self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
             table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
             table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
