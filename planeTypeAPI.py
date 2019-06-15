@@ -112,6 +112,7 @@ class api():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-javascript")
         self.driver = webdriver.Chrome(options=chrome_options, executable_path=self.chrome_driver)
         self.wait = WebDriverWait(self.driver, 10)
         self.rotate = random.randint(4,10)
@@ -166,9 +167,9 @@ class api():
                     except:
                         t += 1
                 if not rows:
-                    self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+                    self.driver.refresh()
                     rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
-
+                
                 for row in rows:
                     # plane type
                     t  = 0
@@ -281,7 +282,6 @@ class api():
             hour = 18
         _path = "https://www.flightstats.com/v2/flight-tracker/route/%s/%s/?year=%s&month=%s&date=%s&hour=%s"% (dep,arr,year,month,day,hour)
         self.driver.get(_path)
-        self.driver.get_screenshot_as_file("capture.png")
         self.wait.until(lambda driver: self.driver.find_element_by_css_selector('div[class="table__Table-s1x7nv9w-6 iiiADv"]').is_displayed())
         table = self.driver.find_element_by_css_selector('div[class="table__Table-s1x7nv9w-6 iiiADv"]')
         datarow = table.find_elements_by_css_selector('div[class="table__TableRowWrapper-s1x7nv9w-9 ggDItd"]')

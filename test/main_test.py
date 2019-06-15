@@ -16,6 +16,12 @@ def test_getRouteAware():
     assert 'BAW173' in routes
     sys.stdout.write(routes[0])
 
+def test_getRoutebyStat():
+    today = datetime.today().strftime('%Y%m%d')
+    today += '18'
+    route = a.getRoutebyStat('LHR','JFK',today)
+    assert 'BA 1593' in route
+
 def test_getTypeByID():
     yesterday = date.today() - timedelta(days=1)
     yesterday = str(yesterday).replace('-','')
@@ -27,12 +33,6 @@ def test_getTypeByID():
     y2 = toepoch(y2)
     planeType = a._getTypeByID('BA1419',y2)
     assert planeType == 'A320 (G-EUYH)'
-
-def test_getRoutebyStat():
-    today = datetime.today().strftime('%Y%m%d')
-    today += '18'
-    route = a.getRoutebyStat('LHR','JFK',today)
-    assert 'BA 1593' in route
 
 def test_db():
     session = session_factory()
