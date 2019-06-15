@@ -205,6 +205,9 @@ class api():
                     except:
                         self.driver.refresh()
                         t += 1
+                if not rows:
+                    self.driver.refresh()
+                    rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 for i in range(len(rows)):
                     t = 0
                     while t < 3:
