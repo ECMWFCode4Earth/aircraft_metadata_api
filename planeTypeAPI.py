@@ -1,7 +1,7 @@
 import os
 import random
 import math
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
 import db
 from selenium import webdriver
@@ -22,21 +22,39 @@ def reinit():
     a = planetypedb()
     a.loaddata()
 
+def load_tzutc():
+    session = session_factory()
+    with open('./rawdata/timezone/tz.txt') as fp:
+        for line in fp:
+            print(line)
+            tmp = line.split()
+            print(tmp)
+            session.execute("insert into Timezone (timezone, utcdiff) VALUES( '%s' , '%s' )" % (tmp[0],tmp[2]))
+    session.commit()
+    session.close()
+
 def convertTimeZone(datestr,_time,timezone):
     datestr = [i for i in datestr.split('-')]
     _time = _time.split(':')
-    if timezone[0] != '+' and timezone[0] != '-':
-        # To do get UTC diff from db
-        pass
-    else:
-        # add or substract hours to UTC 
-        if timezone[0] == '+':
-            _time[0] = int(_time[0]) + int(timezone[1:])
-        elif timezone[0] == '-':
-            _time[0] = int(_time[0]) - int(timezone[1:])
-        tmptime = str(_time[0])+ ':' +_time[1]
-        local_tz = datetime.strptime(tmptime, "%I:%M%p") 
-        local_tz = datetime.strftime(local_tz, "%H:%M")
+    if timezone[0].isalpha():
+        session = session_factory()
+        try:
+            local_tz = session.execute(f"select utcdiff from Timezone where timezone = '{timezone}'").fetchone()[0]
+        except:
+            return None
+        session.close()
+        timezone = local_tz
+    
+
+
+    tmptime = str(_time[0])+ ':' +_time[1]
+    local_tz = datetime.strptime(tmptime, "%I:%M%p") 
+    # add or substract hours to UTC 
+    if timezone[0] == '+':
+        local_tz -=  timedelta(hours=int(timezone[1:]))
+    elif timezone[0] == '-':
+        local_tz -=  timedelta(hours=int(timezone[1:]))
+    local_tz = datetime.strftime(local_tz, "%H:%M")
     month = time.strptime(datestr[1],'%b').tm_mon
     if len(str(month)) == 1:
         month = '0'+ str(month)
@@ -64,7 +82,7 @@ def toepoch(_date):   # input format 20190501173500
     hour = _date[8:10]
     minute = _date[10:12]
     seconds = _date[12:]
-    return (datetime.datetime(int(year), int(month), int(day), int(hour), int(minute), int(seconds)) - datetime.datetime(1970, 1, 1)).total_seconds()
+    return int((datetime(int(year), int(month), int(day), int(hour), int(minute), int(seconds)) - datetime(1970, 1, 1)).total_seconds())
 
 
 class flightawareAPI():
@@ -101,7 +119,7 @@ class api():
 
     def _getTypeByID(self, flightID, epochtime=None, option=0):
        # first try flightradar24
-        s = random.uniform(1.0,2.0)
+        s = random.uniform(1.0,1.501)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
         if option == 0:
@@ -125,23 +143,47 @@ class api():
             table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
             table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
             
-            table = self.driver.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
-            for row in table:
-                try:
-                    data = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')
-                    if epochtime:
-                        date = date[0].text.split('\n')[1]
-                        deptime = tmptime[0].text.split('\n')[0]
-                        arrtime = tmptime[1].text.split('\n')[0]
-                        deptz = deptime.split()[1]
-                        arrtz = arrtime.split()[1]
-                        deptime = convertTimeZone(date,deptime.split()[0],deptz) 
-                        arrtime = convertTimeZone(date,arrtime.split()[0],arrtz)
-                        if epochtime >= toepoch(dpetime) and epochtime <= toepoch(arrtime):
-                            return data[0].text
-                    return data[0].text
-                except:
-                    return None  
+            datas = []
+            first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
+            ptype = first.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+            date = first.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+            datas.append([ptype,date])
+            for x in table:
+                rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                for row in rows:
+                    # plane type
+                    ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                    date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                    datas.append([ptype,date])
+            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+            first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
+            tmptime = first.find_elements_by_css_selector('div[class="flightPageActivityLogData"]')
+            datas[0].append(tmptime[0].text)
+            datas[0].append(tmptime[1].text)
+            for x in table:
+                rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                for i in range(len(rows)):
+                    tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
+                    datas[i].append(tmptime[0].text)
+                    datas[i].append(tmptime[1].text)
+            for row in datas:
+                date = row[1]
+                date = date.split('\n')[1]
+                if len(row) < 4:
+                    continue
+                deptime = row[2].split('\n')[0]
+                arrtime = row[3].split('\n')[0]  
+                if not deptime or not arrtime:
+                    continue
+                deptz = deptime.split()[1]
+                arrtz = arrtime.split()[1]
+                deptime = convertTimeZone(date,deptime.split()[0],deptz) 
+                arrtime = convertTimeZone(date,arrtime.split()[0],arrtz) 
+                print(deptime, arrtime)
+                if epochtime >= toepoch(deptime) and epochtime <= toepoch(arrtime):
+                    return row[0]
         return None
 
     def get_airport(self, lat1, long1, range=5):
@@ -353,7 +395,7 @@ class planetypedb():
                     b += b1
                     for x in b:
                         print('testing for %s'%x)
-                        planetype = self.api._getTypeByID(x,_time =timedict[i][0] ,option=1)
+                        planetype = self.api._getTypeByID(x,epochtime =timedict[i][0] ,option=1) # convert time to epoch first
                         if planetype:
                             matchedType+= 1
                             self.session.execute("UPDATE Planetype SET flightid = '%s', planetype = '%s', dep = '%s', arr = '%s', depcount = %d, arrcount = %d WHERE amdarid = '%s'"
