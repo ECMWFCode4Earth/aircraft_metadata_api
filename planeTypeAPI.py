@@ -139,9 +139,12 @@ class api():
                     planeType = datarow[i].find_elements_by_css_selector('td[class="hidden-xs hidden-sm"]')[1].text
                     return planeType
         elif option == 1:
-            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
-            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+            try:
+                self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+                table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+            except:
+                return None
             
             datas = []
             first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
@@ -182,6 +185,9 @@ class api():
                     break
                 except:
                     t += 1
+            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
             for x in table:
                 t  = 0
                 while t < 3:
@@ -487,3 +493,12 @@ class planetypedb():
                                 %(x,dep,arr)) 
                 self.session.commit()
         return b
+
+a = api()
+from datetime import date
+yesterday = date.today() - timedelta(days=1)
+yesterday = str(yesterday).replace('-','')
+y1 = yesterday + '190000'
+y1 = toepoch(y1)
+planeType = a._getTypeByID('BA1419',y1,option=1)
+assert planeType == 'A320' or planeType == '32N' or planeType == 'A319'
