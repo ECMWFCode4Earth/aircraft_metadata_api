@@ -152,15 +152,16 @@ class api():
                 rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 for row in rows:
                     # plane type
-                    try:
-                        ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
-                        date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
-                        datas.append([ptype,date])
-                    except:
-                        self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-                        ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
-                        date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
-                        datas.append([ptype,date])
+                    t  = 0
+                    while t < 3:
+                        try:
+                            ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                            date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                            datas.append([ptype,date])
+                            break
+                        except:
+                            t += 1
+                            
 
             self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
             table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
@@ -170,19 +171,16 @@ class api():
             datas[0].append(tmptime[0].text)
             datas[0].append(tmptime[1].text)
             for x in table:
-                rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
-                for i in range(len(rows)):
+                t  = 0
+                while t < 3:
                     try:
-                        tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
-                        datas[i].append(tmptime[0].text)
-                        datas[i].append(tmptime[1].text)
+                        rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                        for i in range(len(rows)):
+                            tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
+                            datas[i].append(tmptime[0].text)
+                            datas[i].append(tmptime[1].text)
                     except:
-                        self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
-                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
-                        tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
-                        datas[i].append(tmptime[0].text)
-                        datas[i].append(tmptime[1].text)
+                        t += 1
 
             for row in datas:
                 date = row[1]
