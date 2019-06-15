@@ -112,7 +112,7 @@ class api():
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920x1080")
         chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-javascript")
+        # chrome_options.add_argument("--disable-javascript")
         self.driver = webdriver.Chrome(options=chrome_options, executable_path=self.chrome_driver)
         self.wait = WebDriverWait(self.driver, 10)
         self.rotate = random.randint(4,10)
@@ -180,13 +180,11 @@ class api():
                             datas.append([ptype,date])
                             break
                         except:
+                            self.driver.refresh()
                             t += 1
                             
 
             t  = 0
-            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
-            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
             while t < 3:
                 try:
                     first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
@@ -195,10 +193,9 @@ class api():
                     datas[0].append(tmptime[1].text)
                     break
                 except:
+                    self.driver.refresh()
                     t += 1
-            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
-            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+            
             for x in table:
                 t  = 0
                 while t < 3:
@@ -206,6 +203,7 @@ class api():
                         rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')     
                         break
                     except:
+                        self.driver.refresh()
                         t += 1
                 for i in range(len(rows)):
                     t = 0
@@ -216,6 +214,7 @@ class api():
                             datas[i].append(tmptime[1].text)
                             break
                         except:
+                            self.driver.refresh()
                             t += 1
             print(len(datas))
             print(datas)
