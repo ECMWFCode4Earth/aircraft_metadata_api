@@ -169,13 +169,16 @@ class api():
                             t += 1
                             
 
-            self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
-            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
-            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
-            first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
-            tmptime = first.find_elements_by_css_selector('div[class="flightPageActivityLogData"]')
-            datas[0].append(tmptime[0].text)
-            datas[0].append(tmptime[1].text)
+            t  = 0
+            while t < 3:
+                try:
+                    first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
+                    tmptime = first.find_elements_by_css_selector('div[class="flightPageActivityLogData"]')
+                    datas[0].append(tmptime[0].text)
+                    datas[0].append(tmptime[1].text)
+                    break
+                except:
+                    t += 1
             for x in table:
                 t  = 0
                 while t < 3:
@@ -185,6 +188,7 @@ class api():
                             tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
                             datas[i].append(tmptime[0].text)
                             datas[i].append(tmptime[1].text)
+                            break
                     except:
                         t += 1
 
