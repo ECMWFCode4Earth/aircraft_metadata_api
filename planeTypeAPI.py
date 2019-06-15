@@ -165,6 +165,10 @@ class api():
                         break
                     except:
                         t += 1
+                if not rows:
+                    self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+                    rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+
                 for row in rows:
                     # plane type
                     t  = 0
