@@ -150,12 +150,12 @@ class api():
             datas.append([ptype,date])
             for x in table:
                 t  = 0
-                    while t < 3:
-                        try:
-                            rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
-                            break
-                        except:
-                            t += 1
+                while t < 3:
+                    try:
+                        rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                        break
+                    except:
+                        t += 1
                 for row in rows:
                     # plane type
                     t  = 0
