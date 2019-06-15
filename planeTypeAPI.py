@@ -165,9 +165,18 @@ class api():
             for x in table:
                 rows = x.find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 for i in range(len(rows)):
-                    tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
-                    datas[i].append(tmptime[0].text)
-                    datas[i].append(tmptime[1].text)
+                    try:
+                        tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
+                        datas[i].append(tmptime[0].text)
+                        datas[i].append(tmptime[1].text)
+                    except:
+                        self.driver.get("https://flightaware.com/live/flight/%s" % flightID)
+                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                        tmptime = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')   
+                        datas[i].append(tmptime[0].text)
+                        datas[i].append(tmptime[1].text)
+
             for row in datas:
                 date = row[1]
                 date = date.split('\n')[1]
