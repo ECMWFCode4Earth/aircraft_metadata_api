@@ -10,8 +10,6 @@ a = api(chrome_path =chrome_path)
 
 def test_getRouteAware():
     sys.stdout.write(chrome_path)
-    # g_version = str(subprocess.check_output(['google-chrome', '--version']))
-    # assert g_version[2:len(g_version)-3] == "Google Chrome 74.0.3729.6 dev"
     routes = a.getRoutebyAware('LHR','JFK')
     assert 'BAW173' in routes
     sys.stdout.write(routes[0])
@@ -32,7 +30,7 @@ def test_getTypeByID():
     y2 = yesterday + '184000' 
     y2 = toepoch(y2)
     planeType = a._getTypeByID('BA1419',y2)
-    assert planeType == 'A320 (G-EUYH)'
+    assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)'] 
 
 def test_db():
     session = session_factory()

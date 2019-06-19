@@ -36,6 +36,9 @@ def load_tzutc():
 def convertTimeZone(datestr,_time,timezone):
     datestr = [i for i in datestr.split('-')]
     _time = _time.split(':')
+    if len(_time) < 2:
+        return None
+    timezone = timezone.replace("'",'')
     if timezone[0].isalpha():
         session = session_factory()
         try:
@@ -43,17 +46,15 @@ def convertTimeZone(datestr,_time,timezone):
         except:
             return None
         session.close()
-        timezone = local_tz
-    
-
-
+        if local_tz:
+            timezone = local_tz
     tmptime = str(_time[0])+ ':' +_time[1]
     local_tz = datetime.strptime(tmptime, "%I:%M%p") 
     # add or substract hours to UTC 
     if timezone[0] == '+':
         local_tz -=  timedelta(hours=int(timezone[1:]))
     elif timezone[0] == '-':
-        local_tz -=  timedelta(hours=int(timezone[1:]))
+        local_tz +=  timedelta(hours=int(timezone[1:]))
     local_tz = datetime.strftime(local_tz, "%H:%M")
     month = time.strptime(datestr[1],'%b').tm_mon
     if len(str(month)) == 1:
@@ -61,6 +62,7 @@ def convertTimeZone(datestr,_time,timezone):
     date = datestr[2] + month + datestr[0]   + local_tz.replace(':','') 
     if len(date) == 12:
         date += '00'
+    print('date: ' ,date)
     return date
 
 def diffdistance(long1, lat1, long2, lat2):
@@ -158,6 +160,8 @@ class api():
                     datas.append([ptype,date])
                     break
                 except:
+                    table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                    table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                     t+= 1
             for x in range(len(table)):
                 rows = None
@@ -167,35 +171,44 @@ class api():
                         rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                         break
                     except:
+                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                         t += 1
                 if not rows:
                     table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
                     table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                     rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                 
-                for row in rows:
+                for i in range(len(rows)):
                     # plane type
                     t  = 0
                     while t < 3:
                         try:
-                            ptype = row.find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
-                            date = row.find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
+                            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                            rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                            ptype = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')[0].text
+                            date = rows[i].find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')[0].text
                             datas.append([ptype,date])
                             break
                         except:
-                            self.driver.refresh()
+                            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                            rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                             t += 1
-                            
-
             t  = 0
             while t < 3:
                 try:
+                    table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                    table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                     first = table[1].find_element_by_css_selector('div[class="flightPageDataRowTall flightPageDataRowActive"]')
                     tmptime = first.find_elements_by_css_selector('div[class="flightPageActivityLogData"]')
                     datas[0].append(tmptime[0].text)
                     datas[0].append(tmptime[1].text)
                     break
                 except:
+                    table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                    table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                     t += 1
             
             for x in range(len(table)):
@@ -203,10 +216,16 @@ class api():
                 t  = 0
                 while t < 3:
                     try:
+                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                         rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                         break
                     except:
+                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                        rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                         t += 1
+                
                 if not rows:
                     table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
                     table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
@@ -221,25 +240,36 @@ class api():
                             datas[i].append(tmptime[1].text)
                             break
                         except:
+                            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                            rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                             t += 1
             print(len(datas))
             print(datas)
             for row in datas:
                 date = row[1]
                 date = date.split('\n')[1]
+                # to do check if date is the same if there is no time
                 if len(row) < 4:
                     continue
                 deptime = row[2].split('\n')[0]
-                arrtime = row[3].split('\n')[0]  
+                arrtime = row[3].split('\n')[0]
+                print('arr and dep time',arrtime,deptime)
                 if not deptime or not arrtime:
-                    continue
+                    print('cannot convert deptime or arrtime')
+                    return 
                 deptz = deptime.split()[1]
                 arrtz = arrtime.split()[1]
                 deptime = convertTimeZone(date,deptime.split()[0],deptz) 
                 arrtime = convertTimeZone(date,arrtime.split()[0],arrtz) 
-                print(deptime, arrtime)
+                print('arr and dep time2',arrtime,deptime)
+                if not deptime or not arrtime:
+                    print('cannot convert deptime or arrtime')
+                    return None
                 if epochtime >= toepoch(deptime) and epochtime <= toepoch(arrtime):
                     return row[0]
+                else:
+                    print(f'time {epochtime} not between deptime {toepoch(deptime)} and arrtime {toepoch(arrtime)}')
         return None
 
     def get_airport(self, lat1, long1, range=5):
@@ -370,35 +400,34 @@ class planetypedb():
 
                         ## for AMDAR
                         else:
-                            if float(tmp[5]) < 3000.0:
-                                # add AMDAR ID to temp dict 
-                                if tmp[0] not in dict1:
-                                        dict1[tmp[0]] = {}
-                                # add time to time dict for amdar
-                                if tmp[0] not in timedict:
-                                    timedict[tmp[0]] = [tmp[1]+tmp[2]]
+                            # add AMDAR ID to temp dict 
+                            if tmp[0] not in dict1:
+                                    dict1[tmp[0]] = {}
+                            # add time to time dict for amdar
+                            if tmp[0] not in timedict:
+                                timedict[tmp[0]] = [tmp[1]+tmp[2]]
+                            else:
+                                # select a random time
+                                timedict[tmp[0]].append(tmp[1]+tmp[2])
+                                timedict[tmp[0]].pop(random.randrange(len(timedict[tmp[0]])))
+                            
+                            if tmp[7] != '???' and tmp[8] != '???':
+                                if tmp[7] not in dict1[tmp[0]]:
+                                        dict1[tmp[0]][tmp[7]] = 1
                                 else:
-                                    # select a random time
-                                    timedict[tmp[0]].append(tmp[1]+tmp[2])
-                                    timedict[tmp[0]].pop(random.randrange(len(timedict[tmp[0]])))
-                                
-                                if tmp[7] != '???' and tmp[8] != '???':
-                                    if tmp[7] not in dict1[tmp[0]]:
-                                            dict1[tmp[0]][tmp[7]] = 1
-                                    else:
-                                        dict1[tmp[0]][tmp[7]] += 1
-                                    if tmp[8] not in dict1[tmp[0]]:
-                                            dict1[tmp[0]][tmp[8]] = 1
-                                    else:
-                                        dict1[tmp[0]][tmp[8]] += 1
+                                    dict1[tmp[0]][tmp[7]] += 1
+                                if tmp[8] not in dict1[tmp[0]]:
+                                        dict1[tmp[0]][tmp[8]] = 1
                                 else:
-                                    match = self.api.get_airport(float(tmp[3]),float(tmp[4]))
-                                    if match != None:
-                                        matched += 1
-                                        if match not in dict1[tmp[0]]:
-                                            dict1[tmp[0]][match] = 1
-                                        else:
-                                            dict1[tmp[0]][match] += 1
+                                    dict1[tmp[0]][tmp[8]] += 1
+                            else:
+                                match = self.api.get_airport(float(tmp[3]),float(tmp[4]))
+                                if match != None:
+                                    matched += 1
+                                    if match not in dict1[tmp[0]]:
+                                        dict1[tmp[0]][match] = 1
+                                    else:
+                                        dict1[tmp[0]][match] += 1
 
         matchedRoute = 0
         matchedType = 0
@@ -508,12 +537,25 @@ class planetypedb():
                                 %(x,dep,arr)) 
                 self.session.commit()
         return b
+    
 
-a = api()
-from datetime import date
-yesterday = date.today() - timedelta(days=1)
-yesterday = str(yesterday).replace('-','')
-y1 = yesterday + '190000'
-y1 = toepoch(y1)
-planeType = a._getTypeByID('BA1419',y1,option=1)
-assert planeType == 'A320' or planeType == '32N' or planeType == 'A319'
+    def remove_firstline_arep(self):
+        for file in os.listdir('./rawdata/amdw'):
+            if file[:5] == 'AIREP':
+                with open('./rawdata/amdw/'+file,'r') as fin:
+                    data = fin.read().splitlines(True)
+                with open('./rawdata/amdw/'+file,'w') as fout:
+                    fout.writelines(data[1:])
+
+    def filterDataByaltitude(self,alt):
+        for file in os.listdir('./rawdata/amdw'):
+            with open('./rawdata/amdw/'+file,'r') as fin:
+                data = fin.read().splitlines(True)
+            with open('./rawdata/amdw/'+file,'w') as fout:
+                for x in data:
+                    tmp = x.split()
+                    try:
+                        if float(tmp[5]) < alt:
+                            fout.write(x)
+                    except:
+                        continue
