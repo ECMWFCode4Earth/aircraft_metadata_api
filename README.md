@@ -15,13 +15,12 @@ __Mentor:__ [@BruceIngleby](https://github.com/BruceIngleby), [@MohamedDahoui](h
 The aim of this project is to obtain aircraft metadata for AMDAR data.
 
 ### To do
-- [ ] Create API for flightaware
+- [x] Create API for flightaware
 - [x] Create API for flightradar24
 - [ ] Create API for 1+ more site
 - [x] Create table for airport (number of records: 5958)
 - [x] Create table for flight routes (number of records: 1022545)
 - [ ] Finish Readme
-- [ ] Mapping out flight path? (maybe)
 - [ ] Optimize 
 - [ ] Documentation
 - [ ] Clean code
@@ -33,7 +32,7 @@ To install the api manually please follow the steps in .travis.yml
 
 ### quick start
 
-It have to use a specific version of chrome, in this case it use version 74, if your chrome version is differnt.
+It have to use a specific version of chrome, in this case it use version 75, if your chrome version is differnt.
 Visit http://chromedriver.chromium.org/downloads to download corresponding chromedriver and put it in chromedriver folder.
 
 To use the script in other directory, run the command below:
@@ -55,6 +54,29 @@ a = api()
 flightID =  a._getTypeByID('CX19',option=1) # option 1 - flightaware , 0 - flightradar24
 routes = a.getRoutebyAware('PDX','SEA') # get routes from flightaware
 routestat = a.getRouteByStat('PDX','SEA', 20190510192005) # get routes from flightstats
+
+```
+
+To get plane type for AMDAR or AIREP data:
+```
+1. Place extracted txt files in rawdata/amdw folder
+
+2. Initiate planetypedb()
+
+from planeTypeAPI import planetypedb
+a = planetypedb()
+
+3. remove first line of AIREP file (a line with statistic) if exists
+
+a.remove_firstline_arep()
+
+4. filter the data with altitude (default=3000)
+
+a.filterDataByaltitude()
+
+5. get plane type and insert into sqlite database
+
+a.loaddata() 
 
 ```
 
