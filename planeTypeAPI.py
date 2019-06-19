@@ -257,7 +257,7 @@ class api():
                 print('arr and dep time',arrtime,deptime)
                 if not deptime or not arrtime:
                     print('cannot convert deptime or arrtime')
-                    return 
+                    continue
                 deptz = deptime.split()[1]
                 arrtz = arrtime.split()[1]
                 deptime = convertTimeZone(date,deptime.split()[0],deptz) 
@@ -265,7 +265,7 @@ class api():
                 print('arr and dep time2',arrtime,deptime)
                 if not deptime or not arrtime:
                     print('cannot convert deptime or arrtime')
-                    return None
+                    continue
                 if epochtime >= toepoch(deptime) and epochtime <= toepoch(arrtime):
                     return row[0]
                 else:
