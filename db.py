@@ -35,6 +35,36 @@ class Planetype(Base):
             'arrcount' : self.arrcount,
         }
 
+class Planetypematch(Base):
+    __tablename__ = "Planetypematch"
+    amdarid = Column(String, primary_key=True)
+    flightid1 = Column(String)
+    Planetype1 = Column(String)
+    matchcount1 = Column(Integer)
+    flightid2 = Column(String)
+    Planetype2 = Column(String)
+    matchcount2 = Column(Integer)
+    flightid3 = Column(String)
+    Planetype3 = Column(String)
+    matchcount3 = Column(Integer)
+    def serialize(self):
+        return {
+            'amdarid': self.amdarid,
+            'fligthid1': self.flightid1,
+            'planetype1': self.planetype1,
+            'matchcount1': self.matchcount1,
+            'fligthid2': self.flightid2,
+            'planetype2': self.planetype2,
+            'matchcount2': self.matchcount2,
+            'fligthid3': self.flightid3,
+            'planetype3': self.planetype3,
+            'matchcount3': self.matchcount3,
+        }
+
+class Timezone(Base):
+    __tablename__ = "Timezone"
+    timezone = Column(String, primary_key=True)
+    utcdiff = Column(String)
 
 class Route(Base):
     __tablename__ = "Route"
