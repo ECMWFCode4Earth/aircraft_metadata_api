@@ -574,7 +574,3 @@ class planetypedb():
                 stat.write(f'unfiltered record for this file is {unfiltered} \n')
                 stat.write(f'after filter by altitude below {alt}, number of records is {filtered}\n')
 
-# session = session_factory()
-# res = session.execute("select count(*) from planetype")
-# for row in res:
-#     print(row)
