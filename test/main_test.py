@@ -24,13 +24,11 @@ def test_getTypeByID():
     yesterday = date.today() - timedelta(days=1)
     yesterday = str(yesterday).replace('-','')
     y1 = yesterday + '190000'
-    y1 = toepoch(y1)
-    planeType = a._getTypeByID('BA1419',y1,option=1)
+    planeType = a._getTypeByID('BA1419',[y1],option=1)
     assert planeType == 'A320' or planeType == '32N' or planeType == 'A319'
     y2 = yesterday + '184000' 
-    y2 = toepoch(y2)
-    planeType = a._getTypeByID('BA1419',y2)
-    assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)'] 
+    planeType = a._getTypeByID('BA1419',[y2])
+    assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)','A320 (G-EUYP)'] 
 
 def test_db():
     session = session_factory()
@@ -39,8 +37,8 @@ def test_db():
     assert cur[0] == 'AYGA'
 
 def test_converttz():
-    assert convertTimeZone('10-Jun-2019','04:10PM','+07') == '20190610091000'
-    assert convertTimeZone('10-Jun-2019','04:10AM','BST') == '20190610031000'
+    assert  '20190610091000' in convertTimeZone('10-Jun-2019','04:10PM','+07')
+    assert '20190610031000' in convertTimeZone('10-Jun-2019','04:10AM','BST') 
 
 def test_toepochtime():
     assert toepoch('20190614104100') == 1560508860

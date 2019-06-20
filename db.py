@@ -63,7 +63,8 @@ class Planetypematch(Base):
 
 class Timezone(Base):
     __tablename__ = "Timezone"
-    timezone = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    timezone = Column(String)
     utcdiff = Column(String)
 
 class Route(Base):
@@ -100,3 +101,5 @@ class Airport(Base):
 def reinit():
     Base.metadata.drop_all()
     Base.metadata.create_all()
+
+
