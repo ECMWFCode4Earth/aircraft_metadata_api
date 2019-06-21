@@ -131,7 +131,7 @@ class api():
 
     def _getTypeByID(self, flightID, epochtime, option=0):
        # first try flightradar24
-        s = random.uniform(1.0,1.501)
+        s = random.uniform(1.0,1.5)
         if option == 0:
             self.driver.get("https://www.flightradar24.com/data/flights/"+flightID)
             print('sleeping for %f seconds'%s)
@@ -321,7 +321,7 @@ class api():
         for row in datarow:
             flightID = row.find_element_by_css_selector('a').text
             if len(flightID) > 3:
-                routes.add(flightID)
+                routes.add(flightID.replace(' ',''))
         return list(routes)
 
     def getRoutebyStat(self,dep,arr,_date): # for hour 0 - 0-6, 6 - 6-12, 12 -12-18, 18 - 0 
@@ -350,7 +350,7 @@ class api():
         routes = set()
         for row in datarow:
             route = row.find_element_by_css_selector('h2[class="table__CellText-s1x7nv9w-15 KlAnq"]').text
-            routes.add(route)
+            routes.add(route.replace(' ',''))
         return list(routes)
 
 
@@ -446,12 +446,22 @@ class planetypedb():
                                 match = self.api.get_airport(float(tmp[3]),float(tmp[4]))
                                 if match != None:
                                     numair += 1
+                                    match = '*' + match
                                     if match not in dict1[tmp[0]]:
                                         dict1[tmp[0]][match] = 1
                                     else:
                                         dict1[tmp[0]][match] += 1
                 statairport.write(f"total line : {lwa} , total number of both airport matched: {numair}, percentage : {numair/lwa} \n")
         
+        for i in list(flightIDs):
+            indb = self.session.execute("select * from planetype where amdarid = '%s'" %i).fetchone()
+            if not indb:
+                ptype = self.api._getTypeByID(i,timedict[i],option=1)
+                if ptype:
+                    self.session.execute("insert into Planetype ( amdarid, flightid,planetype) VALUES( '%s' , '%s' , '%s')"
+                                %(i,i,ptype)) 
+                    print(f'inserted {ptype} for  flight {i}')
+                    self.session.commit()
         totalunique = len(dict1)
         matchedRoute = 0
         matchedType = 0
@@ -466,7 +476,15 @@ class planetypedb():
                 continue
             if not indb:
                 #try:
-                b = self.get_route(val[0],val[1],timedict[i][0])
+                if val[0][0] == '*':
+                    deport = val[0][1:]
+                else:
+                    deport = val[0]
+                if val[1][0] == '*':
+                    arrport = val[1][1:] 
+                else:
+                    arrport = val[1]
+                b = self.get_route(deport,arrport,timedict[i][0])
                 if b:
                     print(b)
                     matchedRoute += 1
@@ -475,8 +493,8 @@ class planetypedb():
                     planetype = self.api._getTypeByID(x,timedict[i],option=1)
                     if planetype and planetype != 'del':
                         matchedType+= 1
-                        self.session.execute("insert into Planetype ( amdarid, flightid,planetype, dep,arr,depcount,  arrcount) VALUES( '%s' , '%s' , '%s', '%s' , '%s', %d, %d)"
-                                %(i,x,planetype,val[1],val[0], dict1[i][val[1]],dict1[i][val[1]])) 
+                        self.session.execute("insert into Planetype ( amdarid, flightid,planetype, dep,arr,depcount,  arrcount,datasource) VALUES( '%s' , '%s' , '%s', '%s' , '%s', %d, %d, %s)"
+                                %(i,x,planetype,val[1],val[0], dict1[i][val[1]],dict1[i][val[1]],"'flightaware'")) 
                         countdb = self.session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
                         if countdb:
                             if planetype in [countdb[2],countdb[5],countdb[8]]:
@@ -499,21 +517,26 @@ class planetypedb():
 
                 #except:
                 #    continue
-            elif dict1[i][val[1]] > indb[6] and dict1[i][val[1]] > indb[8]:
-                session = session_factory()
-                b = self.api.getRoutebyPort(val[0],val[1])
-                b1 = self.api.getRoutebyPort(val[1],val[0])
-                if b or b1:
+            elif dict1[i][val[0]] > indb[6] and dict1[i][val[1]] > indb[8]:
+                if val[0][0] == '*':
+                    deport = val[0][1:]
+                else:
+                    deport = val[0]
+                if val[1][0] == '*':
+                    arrport = val[1][1:] 
+                else:
+                    arrport = val[1]
+                b = self.api.getRoutebyPort(deport,arrport)
+                if b:
                     matchedRoute += 1
-                    b += b1
                     for x in b:
                         print('testing for %s'%x)
-                        planetype = self.api._getTypeByID(x,timedict[i] ,option=1) # convert time to epoch first
+                        planetype = self.api._getTypeByID(x,timedict[i] ,option=1) # don't convert time to epoch first
                         if planetype and planetype != 'del':
                             matchedType+= 1
                             self.session.execute("UPDATE Planetype SET flightid = '%s', planetype = '%s', dep = '%s', arr = '%s', depcount = %d, arrcount = %d WHERE amdarid = '%s'"
                                             %(x,planetype,val[1],val[0],dict1[i][val[1]],dict1[i][val[0]],i))
-                            countdb = session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
+                            countdb = self.session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
                             if countdb:
                                 if planetype in [countdb[2],countdb[5],countdb[8]]:
                                     dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
@@ -526,14 +549,16 @@ class planetypedb():
                                 self.session.commit()
                             print('\n update planetype %s matched for %s and %s'%(planetype,x,i))
                             break    
+                        elif planetype == 'del':
+                            self.session.execute(f"delete from Route where flightid = '{x}'") 
+                            self.session.commit()
         self.session.commit()
         with open('./statistic/RouteTypeMatchResult.txt','a') as RRstat:    
             RRstat.write(f"total unique ID : {totalunique} , total number of matched route: {matchedRoute}, total number of matched type : {matchedType} ")
 
     def get_route(self,dep,arr,_date):   
         b = self.api.getRoutebyPort(dep,arr)
-        if not b:
-            b = self.api.getRoutebyStat(dep,arr,_date) + self.api.getRoutebyAware(dep,arr)
+        b += self.api.getRoutebyStat(dep,arr,_date) + self.api.getRoutebyAware(dep,arr)
         if not b:
             return []
         for x in b:
@@ -573,4 +598,3 @@ class planetypedb():
                             continue
                 stat.write(f'unfiltered record for this file is {unfiltered} \n')
                 stat.write(f'after filter by altitude below {alt}, number of records is {filtered}\n')
-
