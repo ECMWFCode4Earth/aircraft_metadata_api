@@ -18,7 +18,7 @@ def test_getRoutebyStat():
     today = datetime.today().strftime('%Y%m%d')
     today += '18'
     route = a.getRoutebyStat('LHR','JFK',today)
-    assert 'BA 1593' in route
+    assert 'BA1593' in route
 
 def test_getTypeByID():
     yesterday = date.today() - timedelta(days=1)
