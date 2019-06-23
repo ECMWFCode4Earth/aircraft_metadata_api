@@ -21,6 +21,7 @@ class Planetype(Base):
     depcount = Column(Integer,default=0)
     arr = Column(String)
     arrcount = Column(Integer, default=0)
+    datasource = Column(String)
 
     def serialize(self):
         return {
@@ -33,6 +34,7 @@ class Planetype(Base):
             'depcount': self.depcount,
             'arr' : self.arr,
             'arrcount' : self.arrcount,
+            'datasource': self.datasource
         }
 
 class Planetypematch(Base):
@@ -102,4 +104,4 @@ def reinit():
     Base.metadata.drop_all()
     Base.metadata.create_all()
 
-
+    

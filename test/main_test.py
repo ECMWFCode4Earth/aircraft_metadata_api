@@ -23,11 +23,14 @@ def test_getRoutebyStat():
 def test_getTypeByID():
     yesterday = date.today() - timedelta(days=1)
     yesterday = str(yesterday).replace('-','')
+    twodaybefore = date.today() - timedelta(days=2)
+    twodaybefore = str(twodaybefore).replace('-','')
     y1 = yesterday + '190000'
-    planeType = a._getTypeByID('BA1419',[y1],option=1)
+    y2 = twodaybefore + '190000'
+    planeType = a._getTypeByID('BA1419',[y1,y2],option=1)
     assert planeType == 'A320' or planeType == '32N' or planeType == 'A319'
-    y2 = yesterday + '184000' 
-    planeType = a._getTypeByID('BA1419',[y2])
+    y3 = yesterday + '184000' 
+    planeType = a._getTypeByID('BA1419',[y2,y3])
     assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)','A320 (G-EUYP)', 'A320 (G-EUYB)'] 
 
 def test_db():
