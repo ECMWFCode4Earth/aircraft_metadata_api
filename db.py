@@ -21,6 +21,7 @@ class Planetype(Base):
     depcount = Column(Integer,default=0)
     arr = Column(String)
     arrcount = Column(Integer, default=0)
+    datasource = Column(String)
 
     def serialize(self):
         return {
@@ -33,6 +34,7 @@ class Planetype(Base):
             'depcount': self.depcount,
             'arr' : self.arr,
             'arrcount' : self.arrcount,
+            'datasource': self.datasource
         }
 
 class Planetypematch(Base):
@@ -63,7 +65,8 @@ class Planetypematch(Base):
 
 class Timezone(Base):
     __tablename__ = "Timezone"
-    timezone = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    timezone = Column(String)
     utcdiff = Column(String)
 
 class Route(Base):
@@ -100,3 +103,5 @@ class Airport(Base):
 def reinit():
     Base.metadata.drop_all()
     Base.metadata.create_all()
+
+    
