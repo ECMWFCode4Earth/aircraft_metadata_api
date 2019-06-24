@@ -1,7 +1,7 @@
 import os
 import random
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import time
 import db
 from selenium import webdriver
@@ -598,3 +598,13 @@ class planetypedb():
                             continue
                 stat.write(f'unfiltered record for this file is {unfiltered} \n')
                 stat.write(f'after filter by altitude below {alt}, number of records is {filtered}\n')
+
+    def writePlanetypedate(self):
+        today = date.today() 
+        lastweek = today - timedelta(days=7)
+        f = open(f"aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
+        res = self.session.execute("select * from planetype")
+        f.write("amdar    flightid  planetype  dep    depcount  arr  arrcount  datasource \n")
+        for row in res:
+            f.write(f"{row[0]}  {row[1]}   {row[2]}      {row[5]}     {row[6]}       {row[7]}  {row[8]}       {row[9]} \n")
+        f.close()
