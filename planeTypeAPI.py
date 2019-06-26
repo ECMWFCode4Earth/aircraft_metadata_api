@@ -500,12 +500,11 @@ class planetypedb():
                             if planetype in [countdb[2],countdb[5],countdb[8]]:
                                 dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
                                 self.session.execute("UPDATE Planetypematch SET matchcount%s = matchcount%s + 1 where amdarid = '%s'" %(dbc,dbc,i))
-                            elif "" in [countdb[2],countdb[5],countdb[8]]:
-                                dbc = [countdb[2],countdb[5],countdb[8]].index('') + 1
-                                self.session.execute("insert into Planetypematch ( amdarid, flightid{dbc},planetype{dbc}, matchcount{dbc}) VALUES( '%s' , '%s', '%s', %d)"
-                                %(i,x,planetype,1))                     
+                            elif None in [countdb[2],countdb[5],countdb[8]]:
+                                dbc = [countdb[2],countdb[5],countdb[8]].index(None) + 1
+                                self.session.execute(f"UPDATE Planetypematch SET matchcount{dbc} = 1, flightid{dbc} = '{x}', Planetype{dbc} = '{planetype}' where amdarid = '{i}'")                     
                         else:
-                            self.session.execute("insert into Planetypematch ( amdarid, flightid1,planetype1, matchcount1) VALUES( '%s' , '%s', '%s', %d)"
+                            self.session.execute("insert into Planetypematch ( amdarid, flightid1,Planetype1, matchcount1) VALUES( '%s' , '%s', '%s', %d)"
                                 %(i,x,planetype,1))   
                         if matchedType%5 == 0:
                             self.session.commit()
@@ -541,10 +540,9 @@ class planetypedb():
                                 if planetype in [countdb[2],countdb[5],countdb[8]]:
                                     dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
                                     self.session.execute("UPDATE Planetypematch SET matchcount%s = matchcount%s + 1 where amdarid = '%s'" %(dbc,dbc,i))
-                                elif "" in [countdb[2],countdb[5],countdb[8]]:
-                                    dbc = [countdb[2],countdb[5],countdb[8]].index('') + 1
-                                    self.session.execute("insert into Planetypematch ( amdarid, flightid{dbc},planetype{dbc}, matchcount{dbc}) VALUES( '%s' , '%s', '%s', %d)"
-                                        %(i,x,planetype,1))  
+                                elif None in [countdb[2],countdb[5],countdb[8]]:
+                                    dbc = [countdb[2],countdb[5],countdb[8]].index(None) + 1
+                                    self.session.execute(f"UPDATE Planetypematch SET matchcount{dbc} = 1, flightid{dbc} = '{x}', Planetype{dbc} = '{planetype}' where amdarid = '{i}'")  
                             if matchedType%5 == 0:
                                 self.session.commit()
                             print('\n update planetype %s matched for %s and %s'%(planetype,x,i))
