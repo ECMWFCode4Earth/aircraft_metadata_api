@@ -606,3 +606,13 @@ class planetypedb():
         for row in res:
             f.write(f"{row[0]}  {row[1]}   {row[2]}      {row[5]}     {row[6]}       {row[7]}  {row[8]}       {row[9]} \n")
         f.close()
+
+    def writeMatchPlanetypedate(self):
+        today = date.today() 
+        lastweek = today - timedelta(days=7)
+        f = open(f"aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}_matchtype.txt", "a")
+        res = self.session.execute("select * from planetypematch")
+        f.write("amdar    flightid1    planetype1     matchcount1      flightid2     planetype2      matchcount2      flightid3      planetype3      matchcount3 \n")
+        for row in res:
+            f.write(f"{row[0]}  {row[1]}        {row[2]}            {row[3]}                {row[4]}            {row[5]}            {row[6]}            {row[7]}            {row[8]}            {row[9]} \n")
+        f.close()
