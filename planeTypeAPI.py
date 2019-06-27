@@ -577,6 +577,7 @@ class planetypedb():
                     fout.writelines(data[1:])
 
     def filterDataByaltitude(self,alt=3000):
+        dict1 = {}
         with open('./filterResult.txt','a') as stat:
             for file in os.listdir('./rawdata/amdw'):
                 unfiltered = 0
@@ -585,11 +586,22 @@ class planetypedb():
                 with open('./rawdata/amdw/'+file,'r') as fin:
                     data = fin.read().splitlines(True)
                     unfiltered = len(data)
+                
+                for x in data:
+                    tmp = x.split()
+                    try:
+                        if tmp[0] not in dict1:
+                            dict1[tmp[0]] = float(tmp[5])
+                        else:
+                            dict1[tmp[0]] = min(dict1[tmp[0],float(tmp[5])])
+                    except:
+                        pass
+
                 with open('./rawdata/amdw/'+file,'w') as fout:
                     for x in data:
                         tmp = x.split()
                         try:
-                            if float(tmp[5]) < alt:
+                            if float(tmp[5]) < (dict1[tmp[0]] + 1000):
                                 fout.write(x)
                                 filtered += 1
                         except:
