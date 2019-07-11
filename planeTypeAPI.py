@@ -303,12 +303,14 @@ class api():
                             earrt = toepoch(arrt)
                             if edept < earrt: 
                                 if toepoch(ep) >= edept and toepoch(ep) <= earrt:
-                                    return row[0]
+                                    dep = row[2].split('-')[1].replace(' ','')
+                                    arr = row[3].split('-')[1].replace(' ','')
+                                    return [row[0],dep,arr]
                                 else:
                                     print(f'time {toepoch(ep)} not between deptime {edept} and arrtime {earrt}')
         return None
 
-    def get_airport(self, lat1, long1, range=2, international=False, distance_range= 100):
+    def get_airport(self, lat1, long1, range=4, international=False, distance_range= 100):
         arange = [ int(long1-range), int(long1+range), int(lat1 - range) , int(lat1+range) ]
         inter = ''
         if international:
@@ -551,8 +553,16 @@ class planetypedb():
                             for x in b:
                                 print('testing for %s'%x)
                                 planetype = self.api._getTypeByID(x,timedict[i],option=1)
+                                
                                 if planetype and planetype != 'del':
+                                    dep = planetype[1]
+                                    arr = planetype[2]
+                                    planetype = planetype[0]
                                     matchedType+= 1
+                                    if dep not in dict1[i]:
+                                        dict1[i][dep] = 1
+                                    if arr not in dict1[i]:
+                                        dict1[i][arr] = 1
                                     self.session.execute("insert into Planetype ( amdarid, flightid,planetype, dep,arr,depcount,  arrcount,datasource) VALUES( '%s' , '%s' , '%s', '%s' , '%s', %d, %d, %s)"
                                             %(i,x,planetype,dep,arr, dict1[i][dep],dict1[i][arr],"'flightaware'")) 
                                     countdb = self.session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
@@ -604,6 +614,13 @@ class planetypedb():
                         print('testing for %s'%x)
                         planetype = self.api._getTypeByID(x,timedict[i] ,option=1) # don't convert time to epoch first
                         if planetype and planetype != 'del':
+                            dep = planetype[1]
+                            arr = planetype[2]
+                            planetype = planetype[0]
+                            if dep not in dict1[i]:
+                                dict1[i][dep] = 1
+                            if arr not in dict1[i]:
+                                dict1[i][arr] = 1
                             matchedType+= 1
                             if indb[2] != planetype:
                                 self.session.execute("UPDATE Planetype SET flightid = '%s', planetype = '%s', dep = '%s', arr = '%s', depcount = %d, arrcount = %d WHERE amdarid = '%s'"
@@ -675,11 +692,11 @@ class planetypedb():
                         tmp = x.split()
                         try:
                             if amdarid:
-                                if float(tmp[5]) >=  dict1[tmp[0]] and tmp[0] in amdarid:
+                                if float(tmp[5]) <  alt and tmp[0] in amdarid:
                                     fout.write(x)
                                     filtered += 1
                             else:
-                                if float(tmp[5]) >= dict1[tmp[0]]:
+                                if float(tmp[5]) < alt:
                                     fout.write(x)
                                     filtered += 1
                         except:
@@ -687,9 +704,9 @@ class planetypedb():
                 stat.write(f'unfiltered record for this file is {unfiltered} \n')
                 stat.write(f'after filter by altitude below {alt}, number of records is {filtered}\n')
 
-    def writePlanetypedate(self):
+    def writePlanetypedate(self,day = 0):
         today = date.today() 
-        lastweek = today - timedelta(days=7)
+        lastweek = today - timedelta(days=day)
         f = open(f"aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
         res = self.session.execute("select * from planetype")
         f.write("amdar    flightid  planetype  dep    depcount  arr  arrcount  datasource \n")
