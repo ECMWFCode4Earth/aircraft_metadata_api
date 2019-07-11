@@ -31,7 +31,7 @@ def test_getTypeByID():
     assert planeType == 'A320' or planeType == '32N' or planeType == 'A319'
     y3 = yesterday + '184000' 
     planeType = a._getTypeByID('BA1419',[y2,y3])
-    assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)','A320 (G-EUYP)', 'A320 (G-EUYB)'] 
+    assert planeType in ['A320 (G-EUYH)','A320 (G-EUYC)','A320 (G-EUYP)', 'A320 (G-EUYB)', 'A20N (G-TTND)','32N','A320'] 
 
 def test_db():
     session = session_factory()
@@ -52,6 +52,8 @@ def test_diffdistance():
     print(a,b)
     assert a > b
 
+def test_distance_diff_airport():
+    assert int(a.distance_diff_airport('HKG','LHR',code='iata')) == 9630
 
 
 
