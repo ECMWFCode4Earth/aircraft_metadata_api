@@ -90,6 +90,7 @@ class Airport(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     altitude = Column(Float, nullable=False)
+    international = Column(Integer,default=0)
     
     def serialize(self):
         return{
@@ -99,9 +100,24 @@ class Airport(Base):
             'altitude': self.altitude,
         }
 
+class Airline(Base):
+    __tablename__ = "Airline"
+    id = Column(Integer, primary_key=True)
+    iata = Column(String(2))
+    icao = Column(String(3))
+    name = Column(String(50))
+
+
 
 def reinit():
     Base.metadata.drop_all()
     Base.metadata.create_all()
 
-    
+def recreate_table(table_name):
+    session = session_factory()
+    session.execute(f"drop table {table_name}")
+    session.commit()
+    Base.metadata.tables[f"{table_name}"].create(bind = engine)
+
+def create_table(table_name):
+    Base.metadata.tables[f"{table_name}"].create(bind = engine)
