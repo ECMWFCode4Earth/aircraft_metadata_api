@@ -12,15 +12,13 @@ session_factory = sessionmaker(bind=engine)
 
 class Planetype(Base):
     __tablename__ = "Planetype"
-    amdarid = Column(String, primary_key=True)
+    id = Column(Integer, primary_key=True)
+    amdarid = Column(String)
     flightid = Column(String)
     planetype = Column(String)
-    deptime = Column(Integer)
-    arrtime = Column(Integer)
+    time = Column(String)
     dep = Column(String)
-    depcount = Column(Integer,default=0)
     arr = Column(String)
-    arrcount = Column(Integer, default=0)
     datasource = Column(String)
 
     def serialize(self):
@@ -28,39 +26,10 @@ class Planetype(Base):
             'amdarid': self.amdarid,
             'fligthid': self.flightid,
             'planetype': self.planetype,
-            'deptime': self.deptime,
-            'arrtime': self.arrtime,
+            'time': self.time,
             'dep' : self.dep,
-            'depcount': self.depcount,
             'arr' : self.arr,
-            'arrcount' : self.arrcount,
             'datasource': self.datasource
-        }
-
-class Planetypematch(Base):
-    __tablename__ = "Planetypematch"
-    amdarid = Column(String, primary_key=True)
-    flightid1 = Column(String)
-    Planetype1 = Column(String)
-    matchcount1 = Column(Integer)
-    flightid2 = Column(String)
-    Planetype2 = Column(String)
-    matchcount2 = Column(Integer)
-    flightid3 = Column(String)
-    Planetype3 = Column(String)
-    matchcount3 = Column(Integer)
-    def serialize(self):
-        return {
-            'amdarid': self.amdarid,
-            'fligthid1': self.flightid1,
-            'planetype1': self.planetype1,
-            'matchcount1': self.matchcount1,
-            'fligthid2': self.flightid2,
-            'planetype2': self.planetype2,
-            'matchcount2': self.matchcount2,
-            'fligthid3': self.flightid3,
-            'planetype3': self.planetype3,
-            'matchcount3': self.matchcount3,
         }
 
 class Timezone(Base):
@@ -106,6 +75,13 @@ class Airline(Base):
     iata = Column(String(2))
     icao = Column(String(3))
     name = Column(String(50))
+
+class Noroute(Base):
+    __tablename__ = "noroute"
+    id = Column(Integer, primary_key=True)
+    arr = Column(String(4))
+    dep = Column(String(4))
+    
 
 
 
