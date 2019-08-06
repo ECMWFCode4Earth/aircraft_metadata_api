@@ -11,6 +11,7 @@ from db import session_factory
 import requests
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 import json
+from multiprocessing import Pool
 
 
 dirpath = os.getcwd()
@@ -85,6 +86,15 @@ def convertTimeZone(datestr,_time,timezone):
     return dates
 
 def diffdistance(long1, lat1, long2, lat2):
+
+    if type(long1) != float:
+        long1 = float(long1)
+    if type(lat1) != float:
+        lat1 = float(lat1)
+    if type(lat2) != float:
+        lat2 = float(lat2)
+    if type(long2) != float:
+        long2 = float(long2)
     ph1 = math.radians(lat1)
     ph2 = math.radians(lat2)
     r = 6371e3
@@ -104,6 +114,9 @@ def toepoch(_date):   # input format 20190501173500
     minute = _date[10:12]
     seconds = _date[12:]
     return int((datetime(int(year), int(month), int(day), int(hour), int(minute), int(seconds)) - datetime(1970, 1, 1)).total_seconds())
+
+def epochToUtc(_epochtime):
+    return datetime.utcfromtimestamp(_epochtime).strftime('%Y-%m-%d %H:%M:%S')
 
 
 class flightawareAPI():
@@ -166,7 +179,7 @@ class api():
 
     def _getTypeByID(self, flightID, epochtime, option=0):
        # first try flightradar24
-        s = random.uniform(0.5,1.0)
+        s = random.uniform(1.0,1.2)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
         if option == 0:
@@ -335,6 +348,27 @@ class api():
                                     print(f'time {toepoch(ep)} not between deptime {edept} and arrtime {earrt}')
         return None
 
+    def get_tailnumber(self,tailnumber):
+        self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
+        table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
+        data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
+        res = []
+        for x in data_row:
+            try:
+                tmp = []
+                data = x.find_elements_by_css_selector('td')
+                dep = data[3].find_element_by_tag_name("a").text.replace('(','').replace(')','')
+                arr = data[4].find_element_by_tag_name("a").text.replace('(','').replace(')','')
+                flightid = data[5].find_element_by_tag_name("a").text
+                dep_time = data[7].get_attribute("data-timestamp")
+                arr_time = data[9].get_attribute("data-timestamp")
+                tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid])
+                res.append(tmp)
+            except:
+                pass
+        return res       
+
+
     def get_airport(self, lat1, long1, range=4, international=False, distance_range= 250):
         arange = [ long1-range, long1+range, lat1 - range , lat1+range ]
         inter = ''
@@ -358,6 +392,10 @@ class api():
 
         return diffdistance(airport1[1],airport1[0],airport2[1],airport2[0])
 
+
+    def diffdistance_one_airport(self, lat1, long1, airport, code='iata'):
+         airport1 = self.session.execute(f"select latitude,longitude from Airport where {code} = '{airport}'").fetchone()
+         return diffdistance(airport1[1],airport1[0],long1,lat1)
     
     def get_international_airport_wiki(self):
         self.driver.get("https://en.wikipedia.org/wiki/List_of_international_airports_by_country")
@@ -521,13 +559,59 @@ class planetypedb():
         
         return flights
 
+    def validate_tailnumber(self,amdarid=None):
+        position_data = self.get_separate_flight_from_data()
+        result = {}
+        res = self.session.execute("select * from planetype")
+        for row in res:
+            if row[1] not in amdarid:
+                continue
+            try:
+                data = self.api.get_tailnumber(row[3].split('(')[1].replace(')',''))
+            except:
+                continue
+            for f in data:
+                for amdarids in position_data:
+                    if amdarids == row[1]:
+                        print(amdarids,row[3])
+                        if amdarids not in result:
+                            result[amdarids] = {}
+                        if row[3] in result[amdarids]:
+                            break
+                        if row[3] not in result[amdarids]:
+                            for flights in position_data[amdarids]:
+                                head_tail = flights[0:1] + flights[len(flights)-1:]
+                                for x in head_tail:
+                                    current_time = toepoch(x[3])
+                                    print(f'testing time {current_time} is between {f[2]} and {f[3]}')
+                                    if f[2] <= current_time and f[3] >= current_time:
+                                        print(current_time,f[0],f[1])
+                                        print(x[0],x[1])
+                                        dist_from_dep = self.api.diffdistance_one_airport(x[0],x[1],f[0],'iata')
+                                        dist_from_arr = self.api.diffdistance_one_airport(x[0],x[1],f[1],'iata')
+                                        print(dist_from_arr,dist_from_dep)
+                                        if dist_from_arr > 1000 and dist_from_dep > 1000:
+                                            print(f[4])
+                                            result[amdarids][row[3]] = False
+                                            print(f'{row[3]} is false for {amdarids}')
+                                            break                 
+                                else:
+                                    continue
+                                break
+                            else:
+                                continue
+                            break
+                else:    
+                    continue
+                break
+
+        return result
 
     def loaddata(self, international = True, lower_distance_diff=4000, upper_distance_diff=20000,  predict_step=0, time_diff=3600, auto_predict=False):
         filelist = os.listdir('./rawdata/amdw')
         filelist.sort(key=lambda x: int(x.split('.')[1]))
         dict1 = {}
         flightIDs = set()
-
         position_data = self.get_separate_flight_from_data(time_diff=time_diff)
 
         with open('./statistic/airportMatchResult.txt','a') as statairport:
@@ -550,7 +634,10 @@ class planetypedb():
                                     if tmp[7] != '???' and tmp[8] != '???':
                                         if tmp[0] not in dict1:
                                             dict1[tmp[0]] = []
-                                        dict1[tmp[0]].append([ [tmp[7],0],[tmp[8],1]])
+                                        if [tmp[7],0] not in dict1[tmp[0]]:
+                                            dict1[tmp[0]].append([tmp[7],0])
+                                        if [tmp[8],1] not in dict1[tmp[0]]:
+                                            dict1[tmp[0]].append([tmp[8],1])
                                         continue
                                 except:
                                     print('File format not the same')
@@ -561,10 +648,10 @@ class planetypedb():
             if predict_step:
                 for amdarid in position_data:
                     for flight in position_data[amdarid]:
-                        if len(flight) < 5:
+                        if len(flight) < 2:
                             continue
-                        direction = get_directions(flight)
                         flight.sort(key=lambda x: x[1])
+                        direction = get_directions(flight[-2:])
                         for x in range(predict_step):
                             current_test = flight[-1]
                             predict_lat = current_test[0] + (direction[0]/2)
@@ -614,13 +701,17 @@ class planetypedb():
                                         flight.append([predict_lat,predict_lon,predict_alt, predict_time.strftime('%Y%m%d%H%M%S')])
                                     break
                                 current_test = [predict_lat,predict_lon,predict_alt,predict_time.strftime('%Y%m%d%H%M%S')]
+                                print(f'current {current_test}')
                                 tried -= 1
+
+                        if not dict1[amdarid]:
+                            dict1[amdarid] = []
                         for port in match:
                             numair += 1
                             tmatch = '*' + port
-                            tmp_res.append([tmatch,order])
-                        if not dict1[amdarid]:
-                            dict1[amdarid] = []
+                            if [tmatch,order] not in dict1[amdarid]:
+                                tmp_res.append([tmatch,order])
+                      
 
                         order += 1
 
@@ -637,8 +728,9 @@ class planetypedb():
                         print(f'inserted {ptype} for  flight {i}')
                         self.session.commit()
             matchedType = 0
-            no_routes = {}
             tried_routes = {}
+ 
+
             for i in dict1:
                 if type(dict1[i]) != list:
                     continue
@@ -647,6 +739,7 @@ class planetypedb():
                     #try:
                     val = dict1[i][k]
                     val.sort(key=lambda x: x[1])  #,reverse=True)
+                    print(val)
                     #print(val)
                     if len(val) < 2:
                         print('less than 2 airport')
@@ -658,9 +751,7 @@ class planetypedb():
                                 continue            
                             deport = val[dep][0].replace('*','')
                             arrport = val[arr][0].replace('*','')
-                            if deport in no_routes:
-                                if arrport in no_routes[deport]:
-                                    continue
+
                             if i+str(k) in tried_routes:
                                 if [deport,arrport] in tried_routes[i+str(k)]:
                                     continue
@@ -670,11 +761,6 @@ class planetypedb():
                                 continue
                             print(f"{i} searching route between {deport} and {arrport}")
                             b = self.get_route(deport,arrport,position_data[i][k][0][3])
-                            if not b:
-                                if deport not in no_routes:
-                                    no_routes[deport] = [arrport]
-                                else:
-                                    no_routes[deport].append(arrport)
 
                             if auto_predict:
                                 if not tried_b and not b:
@@ -713,37 +799,19 @@ class planetypedb():
                                         
                                             for j in next_airport:
                                                 if direct == 1:
-                                                    if j not in no_routes:
-                                                        no_routes[j] = []
-                                                    if arrport in no_routes[j]:
-                                                        print('already done')
-                                                        continue
                                                     print(f"{i} searching route between {j} and predicted airport {arrport}")
                                                     b = self.get_route(j,arrport,_date=predict_time.strftime('%Y%m%d%H%M%S'))
-                                                    val.insert(k+1,[j,0])
-                                                    print(f'added predicted departural airport {j}')
+                                                    if b:
+                                                        val.insert(k+1,[j,0])
+                                                        print(f'added predicted departural airport {j}')
                                                 else:
-                                                    if no_routes[deport]:
-                                                        if j in no_routes[deport]:
-                                                            print('already done')
-                                                            continue
                                                     print(f"{i} searching route between {deport} and predicted airport {j}")
                                                     b = self.get_route(deport,j,_date=predict_time.strftime('%Y%m%d%H%M%S'))
-                                                    val.append([j,val[arr][1]])
-                                                    print(f'added predicted arrival airport {j}')
+                                                    if b:
+                                                        val.append([j,val[arr][1]])
+                                                        print(f'added predicted arrival airport {j}')
                                                 if b:
                                                     break
-                                                else:
-                                                    if direct == 1:
-                                                        if j not in no_routes:
-                                                            no_routes[j] = [arrport]
-                                                        else:
-                                                            no_routes[j].append(arrport)
-                                                    else:
-                                                        if deport not in no_routes:
-                                                            no_routes[deport] = [j]
-                                                        else:
-                                                            no_routes[deport].append(j)
                                             else:
                                                 break
                                             pass
@@ -775,17 +843,6 @@ class planetypedb():
                                     matchedType+= 1
                                     self.session.execute("insert into Planetype ( amdarid, flightid,planetype, dep,arr,datasource,time) VALUES( '%s' , '%s', '%s', '%s', '%s', '%s', '%s')"
                                             %(i,x,planetype, dep1, arr1, source,position_data[i][k][0][3])) 
-                                    countdb = self.session.execute("select * from Planetypematch where amdarid = '%s'" %i).fetchone()
-                                    if countdb:
-                                        if planetype in [countdb[2],countdb[5],countdb[8]]:
-                                            dbc = [countdb[2],countdb[5],countdb[8]].index(planetype) + 1
-                                            self.session.execute("UPDATE Planetypematch SET matchcount%s = matchcount%s + 1 where amdarid = '%s'" %(dbc,dbc,i))
-                                        elif None in [countdb[2],countdb[5],countdb[8]]:
-                                            dbc = [countdb[2],countdb[5],countdb[8]].index(None) + 1
-                                            self.session.execute(f"UPDATE Planetypematch SET matchcount{dbc} = 1, flightid{dbc} = '{x}', Planetype{dbc} = '{planetype}' where amdarid = '{i}'")                     
-                                    else:
-                                        self.session.execute("insert into Planetypematch ( amdarid, flightid1,Planetype1, matchcount1) VALUES( '%s' , '%s', '%s', %d)"
-                                            %(i,x,planetype,1))   
                                     if matchedType%5 == 0:
                                         self.session.commit()
                                     print('\n planetype %s matched for %s and %s'%(planetype,x,i))   
@@ -801,9 +858,16 @@ class planetypedb():
       
 
     def get_route(self,dep,arr,_date):   
-        #b = self.api.getRoutebyPort(dep,arr)
+        b = self.api.getRoutebyPort(dep,arr)
+        record = self.session.execute(f"select * from noroute where dep='{dep}' and arr = '{arr}'")
+        if record.fetchone():
+            return []
+
+
         b = self.api.getRoutebyStat(dep,arr,_date) #+ self.api.getRoutebyAware(dep,arr)
         if not b:
+            self.session.execute(f"insert into noroute(dep, arr) VALUES ('{dep}', '{arr}')")
+            self.session.commit()
             return []
         for x in b:
             indb = self.session.execute("select * from Route where flightid = '%s'" %x).fetchone()
@@ -890,24 +954,31 @@ class planetypedb():
                             continue
                     dict1[tmp[0]] = []
                 
-    def writePlanetypedate(self,day = 0):
+    def writePlanetypedate(self,day = 0, amdarid=None):
         today = date.today() 
         lastweek = today - timedelta(days=day)
         f = open(f"all_aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
         res = self.session.execute("select * from planetype")
         f.write("amdar    flightid  planetype time                   dep    arr    datasource \n")
         for row in res:
+            if amdarid:
+                if row[1] not in amdarid:
+                    continue
             f.write(f"{row[1]}  {row[2]}   {row[3]}  {row[4]}     {row[5]}     {row[7]}       {row[9]}    \n")
         f.close()
 
-    def writePlanetyperesults(self,day = 0,count=2, maximum=False):
+    def writePlanetyperesults(self,day = 0,count=2, maximum=False,amdarid=None,validate=True):
         today = date.today() 
         dict1 = {}
         lastweek = today - timedelta(days=day)
         f = open(f"multiple_aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
         res = self.session.execute("select * from planetype")
         f.write("amdar    planetype                count\n")
+        v_validate = self.validate_tailnumber(amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
         for row in res:
+            if amdarid:
+                if row[1] not in amdarid:
+                    continue
             if row[1] not in dict1:
                 dict1[row[1]] =[]
             if [row[3],row[4]] not in dict1[row[1]]:
@@ -919,9 +990,25 @@ class planetypedb():
             else:
                 k = set(tmp_list)
             for planetype in k:
-                if tmp_list.count(planetype) >= count:
+                if keys not in v_validate:
+                    continue
+                if planetype not in v_validate[keys]:
+                    v_validate[keys][planetype] = True
+                if tmp_list.count(planetype) >= count and v_validate[keys][planetype]:
                     f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
         f.close()
+
+    def write_tailnumber(self,tailnumber):
+        today = date.today() 
+        f = open(f"tailnumber_{tailnumber[0]}_{str(today).replace('-','')}_validate.txt", "a")
+        for x in tailnumber:
+            data = self.api.get_tailnumber(x)
+            f.write(f"for tail number {x} \n")
+            for flight in data:
+                f.write(f"{flight[4]}      {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
+
+        
+
 
     def loaddata_statistic(self,amdarids,alt_filter):
         dict2 = {i : 0 for i in amdarids}
