@@ -998,6 +998,18 @@ class planetypedb():
                     f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
         f.close()
 
+    def write_tailnumber(self,tailnumber):
+        today = date.today() 
+        f = open(f"tailnumber_{tailnumber[0]}_{str(today).replace('-','')}_validate.txt", "a")
+        for x in tailnumber:
+            data = self.api.get_tailnumber(x)
+            f.write(f"for tail number {x} \n")
+            for flight in data:
+                f.write(f"{flight[4]}      {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
+
+        
+
+
     def loaddata_statistic(self,amdarids,alt_filter):
         dict2 = {i : 0 for i in amdarids}
         dictfilter = {i: 0 for i in amdarids}
