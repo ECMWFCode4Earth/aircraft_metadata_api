@@ -115,6 +115,9 @@ def toepoch(_date):   # input format 20190501173500
     seconds = _date[12:]
     return int((datetime(int(year), int(month), int(day), int(hour), int(minute), int(seconds)) - datetime(1970, 1, 1)).total_seconds())
 
+def epochToUtc(_epochtime):
+    return datetime.utcfromtimestamp(_epochtime).strftime('%Y-%m-%d %H:%M:%S')
+
 
 class flightawareAPI():
     
