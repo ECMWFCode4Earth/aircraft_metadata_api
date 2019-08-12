@@ -1102,10 +1102,3 @@ class airlinedb():
             print('error')
             session.rollback()
             session.flush()
-
-
-a = planetypedb()
-a.filterDataByaltitude(9999999999999999,amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA']) #,'5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
-a.loaddata()
-# a.loaddata(upper_distance_diff=4000,lower_distance_diff=250,airport_search_dist=100, international=False)
-# a.writePlanetyperesults(count=1, amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
