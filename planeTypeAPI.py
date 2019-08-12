@@ -349,6 +349,10 @@ class api():
         return None
 
     def get_tailnumber(self,tailnumber):
+        print(f'getting tailnumber {tailnumber}')
+        s = random.uniform(0.2,0.5)
+        print('sleeping for %f seconds'%s)
+        time.sleep(s)
         self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
         table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
         data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
@@ -360,8 +364,12 @@ class api():
                 dep = data[3].find_element_by_tag_name("a").text.replace('(','').replace(')','')
                 arr = data[4].find_element_by_tag_name("a").text.replace('(','').replace(')','')
                 flightid = data[5].find_element_by_tag_name("a").text
-                dep_time = data[7].get_attribute("data-timestamp")
-                arr_time = data[9].get_attribute("data-timestamp")
+                dep_time = data[8].get_attribute("data-timestamp")
+                if not dep_time:
+                    dep_time = data[7].get_attribute("data-timestamp")
+                arr_time = data[11].get_attribute("data-timestamp")
+                if not arr_time:
+                    arr_time = data[9].get_attribute("data-timestamp")
                 tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid])
                 res.append(tmp)
             except:
@@ -559,13 +567,16 @@ class planetypedb():
         
         return flights
 
-    def validate_tailnumber(self,amdarid=None):
+    def validate_tailnumber(self,amdarid=None,dist_diff = 2000):
         position_data = self.get_separate_flight_from_data()
         result = {}
         res = self.session.execute("select * from planetype")
         for row in res:
             if row[1] not in amdarid:
                 continue
+            if row[1] in result:
+                if row[3] in result[row[1]]:
+                    continue
             try:
                 data = self.api.get_tailnumber(row[3].split('(')[1].replace(')',''))
             except:
@@ -576,10 +587,10 @@ class planetypedb():
                         print(amdarids,row[3])
                         if amdarids not in result:
                             result[amdarids] = {}
-                        if row[3] in result[amdarids]:
-                            break
                         if row[3] not in result[amdarids]:
                             for flights in position_data[amdarids]:
+                                if diffdistance(flights[0][1],flights[0][0],flights[-1][1],flights[-1][0]) < dist_diff:
+                                    continue
                                 head_tail = flights[0:1] + flights[len(flights)-1:]
                                 for x in head_tail:
                                     current_time = toepoch(x[3])
@@ -607,13 +618,13 @@ class planetypedb():
 
         return result
 
-    def loaddata(self, international = True, lower_distance_diff=4000, upper_distance_diff=20000,  predict_step=0, time_diff=3600, auto_predict=False):
+    def loaddata(self, international = True, lower_distance_diff=4000, upper_distance_diff=20000,  predict_step=0, time_diff=3600, auto_predict=False, airport_search_dist=250):
         filelist = os.listdir('./rawdata/amdw')
         filelist.sort(key=lambda x: int(x.split('.')[1]))
         dict1 = {}
         flightIDs = set()
         position_data = self.get_separate_flight_from_data(time_diff=time_diff)
-
+        
         with open('./statistic/airportMatchResult.txt','a') as statairport:
             for bi in range(len(filelist)):
                 file = filelist[bi]
@@ -648,19 +659,25 @@ class planetypedb():
             if predict_step:
                 for amdarid in position_data:
                     for flight in position_data[amdarid]:
-                        if len(flight) < 2:
+                        if len(flight) < 5:
                             continue
-                        flight.sort(key=lambda x: x[1])
-                        direction = get_directions(flight[-2:])
+                        direction = get_directions(list(reversed(flight[:5])))
+                        forward_direction = get_directions(flight[len(flight)-5:])
                         for x in range(predict_step):
-                            current_test = flight[-1]
-                            predict_lat = current_test[0] + (direction[0]/2)
-                            predict_lon = current_test[1] + (direction[1]/2)
+                            current_test = flight[0]
+                            current_forward_test = flight[-1]
+                            predict_lat = current_test[0] + (direction[0])
+                            predict_lon = current_test[1] + (direction[1])
+                            predict_for_lat = current_forward_test[0] + (forward_direction[0])
+                            predict_for_lon = current_forward_test[1] + (forward_direction[1])
                             dd = diffdistance(predict_lon,predict_lat,current_test[1],current_test[0])
+                            dd_for = diffdistance(predict_for_lon,predict_for_lat,current_forward_test[1],current_forward_test[0])
                             predict_time = datetime.strptime(current_test[3], '%Y%m%d%H%M%S') + timedelta(minutes = int(dd/500))
                             predict_alt = current_test[2] - 100
-                            flight.append([predict_lat,predict_lon,predict_alt, predict_time.strftime('%Y%m%d%H%M%S')])
-
+                            predict_time_for = datetime.strptime(current_forward_test[3], '%Y%m%d%H%M%S') + timedelta(minutes = int(dd_for/500))
+                            predict_for_alt = current_forward_test[2] - 100
+                            flight.append([predict_for_lat,predict_for_lon,predict_for_alt, predict_time_for.strftime('%Y%m%d%H%M%S')])
+                            flight.insert(0,[predict_lat,predict_lon,predict_alt, predict_time.strftime('%Y%m%d%H%M%S')])
 
                         
             for amdarid in position_data:
@@ -672,16 +689,17 @@ class planetypedb():
                     tmp_res = []
                     order = 0
                     flight.sort(key=lambda x: x[1])
-                    head_tail = flight[0:1] + flight[len(flight)-1:]
+                    head_tail = [flight[0],flight[-1]]
+                    print(head_tail)
                     for x in head_tail:
-                        match = self.api.get_airport(x[0],x[1],international = international)
+                        match = self.api.get_airport(x[0],x[1],international = international,distance_range=airport_search_dist)
                         
                         if auto_predict:
                             if len(flight) >= 5:
                                 tried = 5
                                 forward_direction = get_directions(flight[len(flight)-5:])
                                 backward_direction = get_directions(list(reversed(flight[:5])))
-                            while not match and tried <= 0 and len(flight) >= 5:
+                            while not match and tried >0:
                                 if order == 0:
                                     current_test = flight[0]
                                     direction = backward_direction
@@ -693,7 +711,7 @@ class planetypedb():
                                 dd = diffdistance(predict_lon,predict_lat,current_test[1],current_test[0])
                                 predict_time = datetime.strptime(current_test[3], '%Y%m%d%H%M%S') + timedelta(minutes = int(dd/500))
                                 predict_alt = x[2] - 100
-                                match = self.api.get_airport(predict_lat,predict_lon,international = international)
+                                match = self.api.get_airport(predict_lat,predict_lon,international = international,distance_range=airport_search_dist)
                                 if match:
                                     if order == 0:
                                         flight.insert(0,[predict_lat,predict_lon,predict_alt, predict_time.strftime('%Y%m%d%H%M%S')])
@@ -974,7 +992,7 @@ class planetypedb():
         f = open(f"multiple_aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
         res = self.session.execute("select * from planetype")
         f.write("amdar    planetype                count\n")
-        v_validate = self.validate_tailnumber(amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
+        v_validate = self.validate_tailnumber(amdarid=amdarid)
         for row in res:
             if amdarid:
                 if row[1] not in amdarid:
@@ -1084,3 +1102,10 @@ class airlinedb():
             print('error')
             session.rollback()
             session.flush()
+
+
+a = planetypedb()
+a.filterDataByaltitude(9999999999999999,amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA']) #,'5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
+a.loaddata()
+# a.loaddata(upper_distance_diff=4000,lower_distance_diff=250,airport_search_dist=100, international=False)
+# a.writePlanetyperesults(count=1, amdarid=['2ODTS1BA','5CSUMYRA','AU0079','EU4392','034BATBA','JL3WUUJA','LDXGUUBA','O45CP1BA','ZR1VD5ZA','ZS4UOGBA','ZSFUOGRA'])
