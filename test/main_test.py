@@ -31,7 +31,10 @@ def test_getTypeByID():
     assert planeType in ['A320','32N','A319']
     y3 = yesterday + '184000' 
     planeType = a._getTypeByID('BAW1419',[y2,y3],option=0)
-    assert planeType in ['A319 (G-EUOC)','A320 (G-EUYR)','A320 (G-EUYH)','A320 (G-EUYC)','A320 (G-EUYP)', 'A320 (G-EUYB)', 'A20N (G-TTND)','32N','A320 (G-EUYX)'] 
+    assert planeType[:4]  in ['A319','A320','A20N'] or planeType[:3] == '32N'
+
+def test_get_airline_feet():
+    assert ['B-206L', 'Boeing 737 MAX 8'] in a.get_airline_feet('aq-jyh')
 
 def test_db():
     session = session_factory()
