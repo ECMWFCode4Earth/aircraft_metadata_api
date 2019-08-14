@@ -176,6 +176,23 @@ class api():
             res = response.json()
             print(res)
 
+    def get_airline_feet(self,airline):
+        self.driver.get(f"https://www.flightradar24.com/data/airlines/{airline}/fleet")
+
+        click_down = self.driver.find_elements_by_css_selector('i[class="pull-right fa fa-angle-down"]')
+        for x in click_down:
+            x.click()
+        #self.driver.execute_script("arguments[0].setAttribute('style','display: block;')", drop)
+        table = self.driver.find_elements_by_css_selector('table[class="table table-condensed table-hover"]')
+        res = []
+        for x in table:
+            body = x.find_element_by_tag_name('tbody')
+            rows = body.find_elements_by_tag_name('tr')
+            for r in rows:
+                td = r.find_elements_by_tag_name('td') 
+                res.append([td[0].find_element_by_tag_name("a").text,td[1].text])
+        return res
+
 
     def _getTypeByID(self, flightID, epochtime, option=0):
        # first try flightradar24
@@ -983,6 +1000,15 @@ class planetypedb():
                 if row[1] not in amdarid:
                     continue
             f.write(f"{row[1]}  {row[2]}   {row[3]}  {row[4]}     {row[5]}     {row[7]}       {row[9]}    \n")
+        f.close()
+
+    def writeAirline_feet(self,airline):
+        f = open(f"all_aircrafttype_{airline}.txt", "a")
+        res = self.api.get_airline_feet(airline)
+        f.write("tailnumer    aircraft type\n")
+        print(res)
+        for row in res:
+            f.write(f"{row[0]}        {row[1]}   \n")
         f.close()
 
     def writePlanetyperesults(self,day = 0,count=2, maximum=False,amdarid=None,validate=True):
