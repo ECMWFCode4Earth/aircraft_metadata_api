@@ -176,7 +176,7 @@ class api():
             res = response.json()
             print(res)
 
-    def get_airline_feet(self,airline):
+    def get_airline_fleet(self,airline):
         self.driver.get(f"https://www.flightradar24.com/data/airlines/{airline}/fleet")
 
         click_down = self.driver.find_elements_by_css_selector('i[class="pull-right fa fa-angle-down"]')
@@ -589,8 +589,9 @@ class planetypedb():
         result = {}
         res = self.session.execute("select * from planetype")
         for row in res:
-            if row[1] not in amdarid:
-                continue
+            if amdarid:
+                if row[1] not in amdarid:
+                    continue
             if row[1] in result:
                 if row[3] in result[row[1]]:
                     continue
@@ -1002,9 +1003,9 @@ class planetypedb():
             f.write(f"{row[1]}  {row[2]}   {row[3]}  {row[4]}     {row[5]}     {row[7]}       {row[9]}    \n")
         f.close()
 
-    def writeAirline_feet(self,airline):
+    def writeAirline_fleet(self,airline):
         f = open(f"all_aircrafttype_{airline}.txt", "a")
-        res = self.api.get_airline_feet(airline)
+        res = self.api.get_airline_fleet(airline)
         f.write("tailnumer    aircraft type\n")
         print(res)
         for row in res:
@@ -1018,7 +1019,11 @@ class planetypedb():
         f = open(f"multiple_aircrafttype_{str(today).replace('-','')}_{str(lastweek).replace('-','')}.txt", "a")
         res = self.session.execute("select * from planetype")
         f.write("amdar    planetype                count\n")
-        v_validate = self.validate_tailnumber(amdarid=amdarid)
+        if validate:
+            if amdarid:
+                v_validate = self.validate_tailnumber(amdarid=amdarid)
+            else:
+                v_validate = self.validate_tailnumber()
         for row in res:
             if amdarid:
                 if row[1] not in amdarid:
@@ -1030,16 +1035,21 @@ class planetypedb():
         for keys in dict1:
             tmp_list = [i[0] for i in dict1[keys]]
             if maximum:
-                k = max(set(tmp_list), key = tmp_list.count) 
+                k = [max(set(tmp_list), key = tmp_list.count)]
             else:
                 k = set(tmp_list)
             for planetype in k:
-                if keys not in v_validate:
-                    continue
-                if planetype not in v_validate[keys]:
-                    v_validate[keys][planetype] = True
-                if tmp_list.count(planetype) >= count and v_validate[keys][planetype]:
-                    f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
+                if validate:
+                    if keys not in v_validate:
+                        continue
+                    if planetype not in v_validate[keys]:
+                        v_validate[keys][planetype] = True
+                    if tmp_list.count(planetype) >= count and v_validate[keys][planetype]:
+                        f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
+                else:
+                    print(planetype)
+                    if tmp_list.count(planetype) >= count:
+                        f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
         f.close()
 
     def write_tailnumber(self,tailnumber):
