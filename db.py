@@ -3,10 +3,13 @@ from sqlalchemy import create_engine, ForeignKey, CheckConstraint, Column, DateT
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
+import os
 
-
-
-engine = create_engine('sqlite:///database/database.db', echo=True)
+dirpath = os.path.dirname(os.path.realpath(__file__))
+db_dir = os.path.join(dirpath, 'database/database.db')
+SQLITE_DB = ''.join(['sqlite:///', db_dir])
+print(SQLITE_DB)
+engine = create_engine(SQLITE_DB, echo=True)
 Base = declarative_base(engine)
 session_factory = sessionmaker(bind=engine)
 
