@@ -26,6 +26,16 @@ def reinit():
     a = planetypedb()
     a.loaddata()
 
+def sql(statement):
+    session = session_factory()
+    res = session.execute(statement)
+    
+    res1 = []
+    for x in res:
+        res1.append(x)
+    session.commit()
+    return res1
+
 def load_tzutc():
     session = session_factory()
     with open('./rawdata/timezone/tz.txt') as fp:
@@ -107,6 +117,8 @@ def diffdistance(long1, lat1, long2, lat2):
 
 
 def toepoch(_date):   # input format 20190501173500
+    if type(_date) != str:
+        _date = str(_date)
     year = _date[:4]
     month = _date[4:6]
     day = _date[6:8]
@@ -329,8 +341,6 @@ class api():
                             table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
                             rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
                             t += 1
-            print(len(datas))
-            print(datas)
             for row in datas:
                 date = row[1]
                 date = date.split('\n')[1]
@@ -365,33 +375,84 @@ class api():
                                     print(f'time {toepoch(ep)} not between deptime {edept} and arrtime {earrt}')
         return None
 
-    def get_tailnumber(self,tailnumber):
+    def get_tailnumber(self,tailnumber, options=0):
         print(f'getting tailnumber {tailnumber}')
         s = random.uniform(0.2,0.5)
         print('sleeping for %f seconds'%s)
         time.sleep(s)
-        self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
-        table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
-        data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
         res = []
-        for x in data_row:
+        if options == 0:
             try:
-                tmp = []
-                data = x.find_elements_by_css_selector('td')
-                dep = data[3].find_element_by_tag_name("a").text.replace('(','').replace(')','')
-                arr = data[4].find_element_by_tag_name("a").text.replace('(','').replace(')','')
-                flightid = data[5].find_element_by_tag_name("a").text
-                dep_time = data[8].get_attribute("data-timestamp")
-                if not dep_time:
-                    dep_time = data[7].get_attribute("data-timestamp")
-                arr_time = data[11].get_attribute("data-timestamp")
-                if not arr_time:
-                    arr_time = data[9].get_attribute("data-timestamp")
-                tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid])
-                res.append(tmp)
+                self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
+                table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
+                data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
             except:
-                pass
-        return res       
+                return res
+            for x in data_row:
+                try:
+                    tmp = []
+                    data = x.find_elements_by_css_selector('td')
+                    dep = data[3].find_element_by_tag_name("a").text.replace('(','').replace(')','')
+                    arr = data[4].find_element_by_tag_name("a").text.replace('(','').replace(')','')
+                    flightid = data[5].find_element_by_tag_name("a").text
+                    dep_time = data[8].get_attribute("data-timestamp")
+                    if not dep_time:
+                        dep_time = data[7].get_attribute("data-timestamp")
+                    arr_time = data[11].get_attribute("data-timestamp")
+                    if not arr_time:
+                        arr_time = data[9].get_attribute("data-timestamp")
+                    tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid])
+                    res.append(tmp)
+                except:
+                    pass
+        else:
+            self.driver.get("https://flightaware.com/live/flight/EICVA")
+            table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+            table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+            print(len(table))
+            for x in range(len(table)):
+                rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                for row in range(len(rows)):
+                    try:
+                        tmp = []
+                        data = rows[row].find_elements_by_css_selector('div[class="flightPageActivityLogData optional"]')
+                        date = rows[row].find_elements_by_css_selector('div[class="flightPageActivityLogData flightPageActivityLogDate"]')
+                        times = rows[row].find_elements_by_css_selector('div[class="flightPageActivityLogData"]')
+                        date = date[0].text.split('\n')[1]
+                        deptime = times[0].text.split('\n')[0]
+                        arrtime = times[1].text.split('\n')[0]
+                        dep = times[0].text.split('\n')[1].split('-')[-1]
+                        arr = times[1].text.split('\n')[1].split('-')[-1]
+                        deptz = deptime.split()[1]
+                        arrtz = arrtime.split()[1]
+                        deptime = deptime.split()[0]
+                        arrtime = arrtime.split()[0]
+                        deptime = convertTimeZone(date,deptime,deptz) 
+                        arrtime = convertTimeZone(date,arrtime,arrtz) 
+                        maxi = 0
+                        tdep = None
+                        tarr = None
+                        for j in deptime:
+                            for k in arrtime:
+                                j = int(j)
+                                k = int(k)
+                                if k - j > maxi and k > j:
+                                    maxi = k - j
+                                    tdep = j
+                                    tarr = k
+                        if tdep == None or tarr == None:
+                            continue
+                        tmp.extend([dep,arr,toepoch(tdep),toepoch(tarr)])
+                        res.append(tmp)
+                        
+                    except StaleElementReferenceException:
+                        table = self.driver.find_element_by_css_selector('div[id="flightPageActivityLog"]')
+                        table = table.find_elements_by_css_selector('div[class="flightPageDataTable"]')
+                        rows = table[x].find_elements_by_css_selector('div[class="flightPageDataRowTall "]')
+                        row -= 1
+                
+        return res
+     
 
 
     def get_airport(self, lat1, long1, range=4, international=False, distance_range= 250):
@@ -1004,12 +1065,12 @@ class planetypedb():
         f.close()
 
     def writeAirline_fleet(self,airline):
-        f = open(f"all_aircrafttype_{airline}.txt", "a")
-        res = self.api.get_airline_fleet(airline)
-        f.write("tailnumer    aircraft type\n")
-        print(res)
-        for row in res:
-            f.write(f"{row[0]}        {row[1]}   \n")
+        f = open(f"all_aircrafttype_airline.txt", "a")
+        f.write("tailnumber    type-code     airline_iata        airline_icao        type_description \n")
+        for x in airline:
+            res = self.api.get_airline_fleet(x)
+            for row in res:
+                f.write(f"{row[0]}          {row[1].split()[1].split('-')[0]}              {x.split('-')[0]}             {x.split('-')[1]}                    {row[1]} \n")
         f.close()
 
     def writePlanetyperesults(self,day = 0,count=2, maximum=False,amdarid=None,validate=True):
@@ -1052,14 +1113,17 @@ class planetypedb():
                         f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
         f.close()
 
-    def write_tailnumber(self,tailnumber):
+    def write_tailnumber(self,tailnumber, options=0):
         today = date.today() 
-        f = open(f"tailnumber_{tailnumber[0]}_{str(today).replace('-','')}_validate.txt", "a")
+        f = open(f"airline_{tailnumber[0].split('-')[0]}_{str(today).replace('-','')}_validate.txt", "a")
         for x in tailnumber:
-            data = self.api.get_tailnumber(x)
+            data = self.api.get_tailnumber(x, options=options)
             f.write(f"for tail number {x} \n")
             for flight in data:
-                f.write(f"{flight[4]}      {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
+                if options == 0:
+                    f.write(f"{flight[4]}      {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
+                else:
+                    f.write(f"Unknown                 {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
 
         
 
