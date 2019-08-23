@@ -189,6 +189,9 @@ class api():
             print(res)
 
     def get_airline_fleet(self,airline):
+        s = random.uniform(0.2,0.5)
+        print('sleeping for %f seconds'%s)
+        time.sleep(s)
         self.driver.get(f"https://www.flightradar24.com/data/airlines/{airline}/fleet")
 
         click_down = self.driver.find_elements_by_css_selector('i[class="pull-right fa fa-angle-down"]')
