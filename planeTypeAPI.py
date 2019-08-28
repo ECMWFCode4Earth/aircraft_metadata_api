@@ -1124,7 +1124,10 @@ class planetypedb():
 
     def write_tailnumber(self,tailnumber, options=0):
         today = date.today() 
-        f = open(f"airline_{tailnumber[0].split('-')[0]}_{str(today).replace('-','')}_validate.txt", "a")
+        if '-' not in tailnumber:
+            f = open(f"airline_{tailnumber[0][-2:]}_{str(today).replace('-','')}_validate.txt", "a")    
+        else:
+            f = open(f"airline_{tailnumber[0].split('-')[0]}_{str(today).replace('-','')}_validate.txt", "a")
         for x in tailnumber:
             data = self.api.get_tailnumber(x, options=options)
             f.write(f"for tail number {x} \n")
