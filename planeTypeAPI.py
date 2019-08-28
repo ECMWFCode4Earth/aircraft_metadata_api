@@ -1068,12 +1068,18 @@ class planetypedb():
         f.close()
 
     def writeAirline_fleet(self,airline):
-        f = open(f"all_aircrafttype_airline.txt", "a")
-        f.write("tailnumber    type-code     airline_iata        airline_icao        type_description \n")
         for x in airline:
+            f = open(f"all_aircrafttype_{x}_airline.txt", "a")
+            f.write("tailnumber    type-code     airline_iata        airline_icao        type_description \n")
             res = self.api.get_airline_fleet(x)
+            print(res)
+            if len(x) == 2:
+                code = 'iata'
+            else:
+                code = 'icao'
             for row in res:
-                f.write(f"{row[0]}          {row[1].split()[1].split('-')[0]}              {x.split('-')[0]}             {x.split('-')[1]}                    {row[1]} \n")
+                icao = self.session.execute(f"select iata, icao from Airline where {code} = '{x.upper()}'").fetchone()
+                f.write(f"{row[0]}          {row[1].split()[-1]}              {icao[1]}             {icao[0]}                    {row[1]} \n")
         f.close()
 
     def writePlanetyperesults(self,day = 0,count=2, maximum=False,amdarid=None,validate=True):
