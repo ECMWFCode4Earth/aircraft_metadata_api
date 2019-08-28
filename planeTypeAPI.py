@@ -193,7 +193,6 @@ class api():
         print('sleeping for %f seconds'%s)
         time.sleep(s)
         self.driver.get(f"https://www.flightradar24.com/data/airlines/{airline}/fleet")
-
         click_down = self.driver.find_elements_by_css_selector('i[class="pull-right fa fa-angle-down"]')
         for x in click_down:
             x.click()
@@ -201,11 +200,14 @@ class api():
         table = self.driver.find_elements_by_css_selector('table[class="table table-condensed table-hover"]')
         res = []
         for x in table:
+            type_code = x.find_element_by_xpath('..')
+            type_code = self.driver.execute_script("return arguments[0].previousElementSibling",type_code)
+            type_code = type_code.find_element_by_tag_name('div').text
             body = x.find_element_by_tag_name('tbody')
             rows = body.find_elements_by_tag_name('tr')
             for r in rows:
                 td = r.find_elements_by_tag_name('td') 
-                res.append([td[0].find_element_by_tag_name("a").text,td[1].text])
+                res.append([td[0].find_element_by_tag_name("a").text,td[1].text, type_code])
         return res
 
 
@@ -389,6 +391,10 @@ class api():
                 self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
                 table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
                 data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
+                type_code = driver.find_element_by_css_selector('div[id="cnt-aircraft-info"]')
+                type_code = type_code.find_element_by_css_selector('div[class="col-xs-7"]')
+                type_code = type_code.find_element_by_css_selector('div[class="row h-30 p-l-20 p-t-5"]')
+                type_code = type_code.find_element_by_tag_name('span').text
             except:
                 return res
             for x in data_row:
@@ -404,7 +410,7 @@ class api():
                     arr_time = data[11].get_attribute("data-timestamp")
                     if not arr_time:
                         arr_time = data[9].get_attribute("data-timestamp")
-                    tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid])
+                    tmp.extend([dep,arr,int(dep_time),int(arr_time),flightid, type_code])
                     res.append(tmp)
                 except:
                     pass
@@ -1072,14 +1078,13 @@ class planetypedb():
             f = open(f"all_aircrafttype_{x}_airline.txt", "a")
             f.write("tailnumber    type-code     airline_iata        airline_icao        type_description \n")
             res = self.api.get_airline_fleet(x)
-            print(res)
             if len(x) == 2:
                 code = 'iata'
             else:
                 code = 'icao'
             for row in res:
                 icao = self.session.execute(f"select iata, icao from Airline where {code} = '{x.upper()}'").fetchone()
-                f.write(f"{row[0]}          {row[1].split()[-1]}              {icao[1]}             {icao[0]}                    {row[1]} \n")
+                f.write(f"{row[0]}          {row[2]}              {icao[1]}             {icao[0]}                    {row[1]} \n")
         f.close()
 
     def writePlanetyperesults(self,day = 0,count=2, maximum=False,amdarid=None,validate=True):
