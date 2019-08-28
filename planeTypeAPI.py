@@ -1127,9 +1127,12 @@ class planetypedb():
                         f.write(f" {keys}         {planetype}     {tmp_list.count(planetype)}  \n")
         f.close()
 
-    def write_tailnumber(self,tailnumber, options=0):
+    def write_tailnumber(self,tailnumber,airline=None ,options=0):
         today = date.today() 
-        if '-' not in tailnumber:
+
+        if airline:
+            f = open(f"airline_{airline}_{str(today).replace('-','')}_validate.txt", "a")    
+        elif '-' not in tailnumber:
             f = open(f"airline_{tailnumber[0][-2:]}_{str(today).replace('-','')}_validate.txt", "a")    
         else:
             f = open(f"airline_{tailnumber[0].split('-')[0]}_{str(today).replace('-','')}_validate.txt", "a")
