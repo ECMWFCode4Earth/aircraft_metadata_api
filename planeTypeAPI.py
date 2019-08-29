@@ -388,7 +388,7 @@ class api():
                 self.driver.get(f"https://www.flightradar24.com/data/aircraft/{tailnumber}")
                 table = self.driver.find_element_by_css_selector('table[id="tbl-datatable"]')    
                 data_row = table.find_elements_by_css_selector('tr[class=" data-row"]')
-                type_code = driver.find_element_by_css_selector('div[id="cnt-aircraft-info"]')
+                type_code = self.driver.find_element_by_css_selector('div[id="cnt-aircraft-info"]')
                 type_code = type_code.find_element_by_css_selector('div[class="col-xs-7"]')
                 type_code = type_code.find_element_by_css_selector('div[class="row h-30 p-l-20 p-t-5"]')
                 type_code = type_code.find_element_by_tag_name('span').text
@@ -1078,12 +1078,13 @@ class planetypedb():
             f = open(f"all_aircrafttype_{x}_airline.txt", "a")
             f.write("tailnumber    type-code     airline_iata        airline_icao        type_description \n")
             res = self.api.get_airline_fleet(x)
-            if len(x) == 2:
+            air_code = x.split('-')[-1]
+            if len(air_code) == 2:
                 code = 'iata'
             else:
                 code = 'icao'
             for row in res:
-                icao = self.session.execute(f"select iata, icao from Airline where {code} = '{x.upper()}'").fetchone()
+                icao = self.session.execute(f"select iata, icao from Airline where {code} = '{air_code.upper()}'").fetchone()
                 f.write(f"{row[0]}          {row[2]}              {icao[1]}             {icao[0]}                    {row[1]} \n")
         f.close()
 
