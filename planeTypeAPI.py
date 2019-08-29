@@ -12,6 +12,7 @@ import requests
 from selenium.common.exceptions import StaleElementReferenceException, NoSuchElementException
 import json
 from multiprocessing import Pool
+from collections import defaultdict
 
 
 dirpath = os.getcwd()
@@ -29,12 +30,8 @@ def reinit():
 def sql(statement):
     session = session_factory()
     res = session.execute(statement)
-    
-    res1 = []
-    for x in res:
-        res1.append(x)
     session.commit()
-    return res1
+    return res
 
 def load_tzutc():
     session = session_factory()
@@ -706,12 +703,13 @@ class planetypedb():
 
         return result
 
-    def loaddata(self, international = True, lower_distance_diff=4000, upper_distance_diff=20000,  predict_step=0, time_diff=3600, auto_predict=False, airport_search_dist=250):
+    def loaddata(self, international = True, lower_distance_diff=4000, upper_distance_diff=20000,  predict_step=0, time_diff=3600, auto_predict=False, airport_search_dist=250, no_estimate=True):
         filelist = os.listdir('./rawdata/amdw')
         filelist.sort(key=lambda x: int(x.split('.')[1]))
         dict1 = {}
         flightIDs = set()
         position_data = self.get_separate_flight_from_data(time_diff=time_diff)
+        has_airport = defaultdict(lambda: False)
         
         with open('./statistic/airportMatchResult.txt','a') as statairport:
             for bi in range(len(filelist)):
@@ -737,6 +735,7 @@ class planetypedb():
                                             dict1[tmp[0]].append([tmp[7],0])
                                         if [tmp[8],1] not in dict1[tmp[0]]:
                                             dict1[tmp[0]].append([tmp[8],1])
+                                        has_airport[tmp[0]] = True
                                         continue
                                 except:
                                     print('File format not the same')
@@ -769,9 +768,10 @@ class planetypedb():
 
                         
             for amdarid in position_data:
+                if no_estimate:
+                    if has_airport[amdarid]:
+                        continue
                 for flight in position_data[amdarid]:
-                    
-                    print(amdarid)
                     if amdarid in flightIDs:
                         continue
                     tmp_res = []
