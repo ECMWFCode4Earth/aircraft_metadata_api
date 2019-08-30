@@ -14,17 +14,6 @@ __Mentor:__ [@BruceIngleby](https://github.com/BruceIngleby), [@MohamedDahoui](h
 ### Summary
 The aim of this project is to obtain aircraft metadata for AMDAR data.
 
-### To do
-- [x] Create API for flightaware
-- [x] Create API for flightradar24
-- [ ] Create API for 1+ more site
-- [x] Create table for airport (number of records: 5958)
-- [x] Create table for flight routes (number of records: 1022545)
-- [ ] Finish Readme
-- [ ] Optimize 
-- [ ] Documentation
-- [ ] Clean code
-- [ ] Use official API of flightaware?
 
 ### manual installation
 
