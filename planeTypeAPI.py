@@ -1083,8 +1083,12 @@ class planetypedb():
                 code = 'iata'
             else:
                 code = 'icao'
+            icao = self.session.execute(f"select iata, icao from Airline where {code} = '{air_code.upper()}'").fetchone()
+            if not icao:
+                icao = []
+                icao.append(x.split('-')[0])
+                icao.append(x.split('-')[1])
             for row in res:
-                icao = self.session.execute(f"select iata, icao from Airline where {code} = '{air_code.upper()}'").fetchone()
                 f.write(f"{row[0]}          {row[2]}              {icao[1]}             {icao[0]}                    {row[1]} \n")
         f.close()
 
@@ -1145,7 +1149,7 @@ class planetypedb():
                     f.write(f"{flight[4]}      {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
                 else:
                     f.write(f"Unknown                 {flight[0]}        { epochToUtc(flight[2])}   {flight[1]}     { epochToUtc(flight[3])}   \n")
-
+        f.close()
         
 
 
