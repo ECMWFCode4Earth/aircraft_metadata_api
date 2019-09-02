@@ -34,7 +34,7 @@ def test_getTypeByID():
     assert planeType[:4]  in ['A319','A320','A20N'] or planeType[:3] == '32N'
 
 def test_get_airline_fleet():
-    assert ['B-206L', 'Boeing 737 MAX 8'] in a.get_airline_fleet('aq-jyh')
+    assert ['B-206L', 'Boeing 737 MAX 8', 'B38M'] in a.get_airline_fleet('aq-jyh')
 
 def test_db():
     session = session_factory()
