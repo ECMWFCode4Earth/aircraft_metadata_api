@@ -1,17 +1,27 @@
-
-from sqlalchemy import create_engine, ForeignKey, CheckConstraint, Column, DateTime, Integer, String,Text, Float
+from sqlalchemy import (
+    create_engine,
+    ForeignKey,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Integer,
+    String,
+    Text,
+    Float,
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import datetime
 import os
 
 dirpath = os.path.dirname(os.path.realpath(__file__))
-db_dir = os.path.join(dirpath, 'database/database.db')
-SQLITE_DB = ''.join(['sqlite:///', db_dir])
+db_dir = os.path.join(dirpath, "database/database.db")
+SQLITE_DB = "".join(["sqlite:///", db_dir])
 print(SQLITE_DB)
 engine = create_engine(SQLITE_DB, echo=True)
 Base = declarative_base(engine)
 session_factory = sessionmaker(bind=engine)
+
 
 class Planetype(Base):
     __tablename__ = "Planetype"
@@ -26,14 +36,15 @@ class Planetype(Base):
 
     def serialize(self):
         return {
-            'amdarid': self.amdarid,
-            'fligthid': self.flightid,
-            'planetype': self.planetype,
-            'time': self.time,
-            'dep' : self.dep,
-            'arr' : self.arr,
-            'datasource': self.datasource
+            "amdarid": self.amdarid,
+            "fligthid": self.flightid,
+            "planetype": self.planetype,
+            "time": self.time,
+            "dep": self.dep,
+            "arr": self.arr,
+            "datasource": self.datasource,
         }
+
 
 class Timezone(Base):
     __tablename__ = "Timezone"
@@ -41,19 +52,21 @@ class Timezone(Base):
     timezone = Column(String)
     utcdiff = Column(String)
 
+
 class Route(Base):
     __tablename__ = "Route"
     id = Column(Integer, primary_key=True)
     flightid = Column(String(20))
     dep = Column(String(5), nullable=False)
     arr = Column(String(5), nullable=False)
-    
+
     def serialize(self):
-        return{
-            'flightid': self.flightid,
-            'dep': self.dep,
-            'arr': self.arr,
+        return {
+            "flightid": self.flightid,
+            "dep": self.dep,
+            "arr": self.arr,
         }
+
 
 class Airport(Base):
     __tablename__ = "Airport"
@@ -62,15 +75,16 @@ class Airport(Base):
     latitude = Column(Float, nullable=False)
     longitude = Column(Float, nullable=False)
     altitude = Column(Float, nullable=False)
-    international = Column(Integer,default=0)
-    
+    international = Column(Integer, default=0)
+
     def serialize(self):
-        return{
-            'icao': self.icao,
-            'latitude': self.latitude,
-            'longitude': self.longitude,
-            'altitude': self.altitude,
+        return {
+            "icao": self.icao,
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "altitude": self.altitude,
         }
+
 
 class Airline(Base):
     __tablename__ = "Airline"
@@ -79,24 +93,25 @@ class Airline(Base):
     icao = Column(String(3))
     name = Column(String(50))
 
+
 class Noroute(Base):
     __tablename__ = "noroute"
     id = Column(Integer, primary_key=True)
     arr = Column(String(4))
     dep = Column(String(4))
-    
-
 
 
 def reinit():
     Base.metadata.drop_all()
     Base.metadata.create_all()
 
+
 def recreate_table(table_name):
     session = session_factory()
     session.execute(f"drop table {table_name}")
     session.commit()
-    Base.metadata.tables[f"{table_name}"].create(bind = engine)
+    Base.metadata.tables[f"{table_name}"].create(bind=engine)
+
 
 def create_table(table_name):
-    Base.metadata.tables[f"{table_name}"].create(bind = engine)
+    Base.metadata.tables[f"{table_name}"].create(bind=engine)
